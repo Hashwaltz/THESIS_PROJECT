@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HR Admin{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style2.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        {% include 'hr/admin/partials/sidebar.html' %}
+        {% include 'hr/admin/partials/header.html' %}
+
+        <main class="content-wrap">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<header class="menu-wrap">
+    <figure class="user">
+        <div class="user-avatar">
+            <img src="..." alt="User Name">
+        </div>
+        <figcaption>{{ current_user.name or "User" }}</figcaption>
+    </figure>
+
+    <nav>
+        {% include 'hr/admin/partials/discover.html' %}
+        {% include 'hr/admin/partials/tools.html' %}
+        {% include 'hr/admin/partials/finance.html' %}
+    </nav>
+</header>
