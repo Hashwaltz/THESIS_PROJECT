@@ -1,13 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from ..forms import LoginForm, RegistrationForm
 from .. import db
 from ..models.user import User
 from ..models.hr_models import Employee, Attendance
 from ..utils import admin_required
-
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -24,29 +22,30 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        flash(f"Email entered: {form.email.data}", "info")
-        flash(f"Password entered: {form.password.data}", "info")
-        if user and  user.password == form.password.data:
-            flash('Login successful!', 'success')   
-            if user.active:
-                login_user(user)
-                user.last_login = datetime.utcnow()
-                db.session.commit()
-                
-                # Redirect based on role
-                if user.role == 'Admin':
-                    return redirect(url_for('hr_admin.dashboard'))
-                elif user.role == 'officer':
-                    return redirect(url_for('hr_officer.dashboard'))
-                elif user.role == 'dept_head':
-                    return redirect(url_for('dept_head.dashboard'))
-                else:
-                    return redirect(url_for('employee.dashboard'))
-            else:
+
+        # Plain-text password check
+        if user and user.password == form.password.data:
+            if not user.active:
                 flash('Your account has been deactivated. Please contact administrator.', 'error')
+                return render_template('auth/login.html', form=form)
+
+            login_user(user)
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+
+            # Role-based redirect
+            role = user.role.lower()
+            if role == 'admin':
+                return redirect(url_for('hr_admin.dashboard'))
+            elif role == 'officer':
+                return redirect(url_for('hr_officer.dashboard'))
+            elif role == 'dept_head':
+                return redirect(url_for('dept_head.dashboard'))
+            else:
+                return redirect(url_for('employee.dashboard'))
         else:
             flash('Invalid email or password.', 'error')
-    
+
     return render_template('auth/login.html', form=form)
 
 
@@ -64,7 +63,7 @@ def register():
         
         user = User(
             email=form.email.data,
-            password=generate_password_hash(form.password.data),
+            password=form.password.data,  # plain-text password
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             role=form.role.data,
@@ -82,7 +81,6 @@ def register():
             flash('Registration failed. Please try again.', 'error')
     
     return render_template('auth/register.html', form=form)
-
 
 
 @auth_bp.route('/logout')
@@ -107,7 +105,8 @@ def change_password():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
         
-        if not check_password_hash(current_user.password, current_password):
+        # Plain-text password check
+        if current_user.password != current_password:
             flash('Current password is incorrect.', 'error')
             return render_template('auth/change_password.html')
         
@@ -119,7 +118,7 @@ def change_password():
             flash('New password must be at least 6 characters long.', 'error')
             return render_template('auth/change_password.html')
         
-        current_user.password = generate_password_hash(new_password)
+        current_user.password = new_password
         db.session.commit()
         flash('Password changed successfully.', 'success')
         return redirect(url_for('auth.profile'))

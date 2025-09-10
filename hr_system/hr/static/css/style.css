@@ -89,6 +89,16 @@ body {
     color: #3b82f6;
     font-weight: 500;
 }
+.logo-placeholder {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.rounded-logo {
+    border-radius: 50%; /* Makes it perfectly round */
+    display: inline-block;
+    object-fit: cover; /* Ensures the image scales correctly */
+}
 
 .input-wrapper label {
     position: absolute;

@@ -3,10 +3,9 @@
 {% block title %}View Employees{% endblock %}
 
 {% block content %}
-<h1>View All Employees</h1>
+<h1><b>View All Employees</b></h1>
 
-
-
+<main>
 <div class="container">
   <table class="responsive-table">
     <caption><b>Employee List</b></caption>
@@ -23,7 +22,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for employee in employees.items %}
+      {% for employee in employees %}
       <tr>
         <td>{{ employee.employee_id }}</td>
         <td>{{ employee.get_full_name() }}</td>
@@ -44,17 +43,8 @@
       {% endfor %}
     </tbody>
   </table>
-
-  <!-- Pagination links -->
-  <div class="pagination">
-      {% if employees.has_prev %}
-          <a href="{{ url_for('hr_admin.employees', page=employees.prev_num, search=search, department=selected_department) }}">Previous</a>
-      {% endif %}
-      Page {{ employees.page }} of {{ employees.pages }}
-      {% if employees.has_next %}
-          <a href="{{ url_for('hr_admin.employees', page=employees.next_num, search=search, department=selected_department) }}">Next</a>
-      {% endif %}
-  </div>
 </div>
-
+</main>
 {% endblock %}
+
+{% block scripts %}{% endblock %}

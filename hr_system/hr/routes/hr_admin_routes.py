@@ -13,7 +13,6 @@ from collections import defaultdict
 hr_admin_bp = Blueprint('hr_admin', __name__)
 
 # ------------------------- Dashboard -------------------------
-# ------------------------- Dashboard -------------------------
 @hr_admin_bp.route('/dashboard')
 @login_required
 @admin_required
@@ -63,35 +62,20 @@ def dashboard():
     )
 
 
-# ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
 @login_required
 @admin_required
 def employees():
-    page = request.args.get('page', 1, type=int)
-    search = request.args.get('search', '')
-    department = request.args.get('department', '')
-
-    query = Employee.query.filter_by(active=True)
-    if search:
-        query = query.filter(
-            (Employee.first_name.contains(search)) |
-            (Employee.last_name.contains(search)) |
-            (Employee.employee_id.contains(search))
-        )
-    if department:
-        query = query.filter_by(department_id=department)
-
-    employees = query.paginate(page=page, per_page=10, error_out=False)
+    # Get all employees
+    employees = Employee.query.all()
     departments = Department.query.all()
 
     return render_template(
         'hr/admin/admin_view_employees.html',
         employees=employees,
-        departments=departments,
-        search=search,
-        selected_department=department
+        departments=departments
     )
+
 
 @hr_admin_bp.route('/employees/add', methods=['GET', 'POST'])
 @login_required
