@@ -15,6 +15,10 @@ def create_app():
 
     app.config.from_object(Config)
 
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["DEBUG"] = True
+
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)

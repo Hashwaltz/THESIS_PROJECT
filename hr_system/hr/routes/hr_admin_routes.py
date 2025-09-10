@@ -6,9 +6,13 @@ from ..models.hr_models import Employee, Attendance, Leave, Department
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm, DepartmentForm
 from ..utils import admin_required, generate_employee_id, get_attendance_summary, get_current_month_range
 from .. import db
+from datetime import timedelta
+from collections import defaultdict
+
 
 hr_admin_bp = Blueprint('hr_admin', __name__)
 
+# ------------------------- Dashboard -------------------------
 # ------------------------- Dashboard -------------------------
 @hr_admin_bp.route('/dashboard')
 @login_required
@@ -22,7 +26,26 @@ def dashboard():
     recent_leaves = Leave.query.order_by(Leave.created_at.desc()).limit(5).all()
 
     start_date, end_date = get_current_month_range()
-    attendance_summary = get_attendance_summary(employee_id=None, start_date=start_date, end_date=end_date)
+    dates = []
+    present_counts, absent_counts, late_counts = [], [], []
+    
+    current_date = start_date
+    while current_date <= end_date:
+        records = Attendance.query.filter_by(date=current_date).all()
+        dates.append(current_date.strftime("%b %d"))  # e.g. Sep 01
+        present_counts.append(len([r for r in records if r.status == "Present"]))
+        absent_counts.append(len([r for r in records if r.status == "Absent"]))
+        late_counts.append(len([r for r in records if r.status == "Late"]))
+        current_date += timedelta(days=1)
+
+    # Employees per department
+    dept_data = db.session.query(
+        Department.name, db.func.count(Employee.id)
+    ).join(Employee, Employee.department_id == Department.id)\
+     .group_by(Department.name).all()
+
+    dept_labels = [d[0] for d in dept_data]
+    dept_counts = [d[1] for d in dept_data]
 
     return render_template(
         'hr/admin/admin_dashboard.html',
@@ -31,8 +54,14 @@ def dashboard():
         total_departments=total_departments,
         recent_employees=recent_employees,
         recent_leaves=recent_leaves,
-        attendance_summary=attendance_summary
+        dates=dates,
+        present_counts=present_counts,
+        absent_counts=absent_counts,
+        late_counts=late_counts,
+        dept_labels=dept_labels,
+        dept_counts=dept_counts
     )
+
 
 # ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
@@ -57,7 +86,7 @@ def employees():
     departments = Department.query.all()
 
     return render_template(
-        'hr/employees.html',
+        'hr/admin/admin_view_employees.html',
         employees=employees,
         departments=departments,
         search=search,
@@ -110,7 +139,7 @@ def add_employee():
 @admin_required
 def view_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
-    return render_template('hr/view_employee.html', employee=employee)
+    return render_template('hr/admin/view_employee.html', employee=employee)
 
 @hr_admin_bp.route('/employees/<int:employee_id>/edit', methods=['GET', 'POST'])
 @login_required
