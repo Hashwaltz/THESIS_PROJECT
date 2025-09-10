@@ -1,50 +1,65 @@
 {% extends 'hr/admin/admin_base.html' %}
-
-{% block title %}View Employees{% endblock %}
-
+{% block title %}View Employees{%endblock %}
 {% block content %}
-<h1><b>View All Employees</b></h1>
 
-<main>
-<div class="container">
-  <table class="responsive-table">
-    <caption><b>Employee List</b></caption>
-    <thead>
-      <tr>
-        <th scope="col">Employee ID</th>
-        <th scope="col">Full Name</th>
-        <th scope="col">Email</th>
-        <th scope="col">Phone</th>
-        <th scope="col">Department</th>
-        <th scope="col">Position</th>
-        <th scope="col">Date Hired</th>
-        <th scope="col">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for employee in employees %}
-      <tr>
-        <td>{{ employee.employee_id }}</td>
-        <td>{{ employee.get_full_name() }}</td>
-        <td>{{ employee.email }}</td>
-        <td>{{ employee.phone }}</td>
-        <td>{{ employee.department.name if employee.department else '-' }}</td>
-        <td>{{ employee.position }}</td>
-        <td>{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
-        <td>
-          <a href="{{ url_for('hr_admin.view_employee', employee_id=employee.id) }}">View</a> |
-          <a href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}">Edit</a>
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="8">No employees found.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>View All Employees</b></h1> 
+  </header>
+
+  <div class="container"> 
+  <div class="centered-container">
+    <table class="responsive-table">
+      <caption>
+        <b>Employee List</b>
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Employee ID</th>
+          <th scope="col">Full Name</th>
+          <th scope="col">Email</th>
+          <th scope="col">Phone</th>
+          <th scope="col">Department</th>
+          <th scope="col">Position</th>
+          <th scope="col">Date Hired</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for employee in employees %}
+        <tr>
+          <td>{{ employee.employee_id }}</td>
+          <td>{{ employee.get_full_name() }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.phone }}</td>
+          <td>
+            {{ employee.department.name if employee.department else '-' }}
+          </td>
+          <td>{{ employee.position }}</td>
+          <td>
+            {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired
+            else '-' }}
+          </td>
+          <td>
+            <a
+              href="{{ url_for('hr_admin.view_employee', employee_id=employee.id) }}"
+              >View</a
+            >
+            |
+            <a
+              href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}"
+              >Edit</a
+            >
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">No employees found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  </div>
 </main>
-{% endblock %}
-
-{% block scripts %}{% endblock %}
+{% endblock %} {% block scripts %}{% endblock %}

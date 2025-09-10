@@ -116,7 +116,7 @@ def add_employee():
             db.session.rollback()
             flash('Error adding employee. Please try again.', 'error')
 
-    return render_template('hr/add_employee.html', form=form)
+    return render_template('hr/admin/admin_add.html', form=form)
 
 @hr_admin_bp.route('/employees/<int:employee_id>')
 @login_required
