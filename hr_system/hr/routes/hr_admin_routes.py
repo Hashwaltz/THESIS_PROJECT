@@ -81,30 +81,34 @@ def employees():
 @login_required
 @admin_required
 def add_employee():
-    form = EmployeeForm()
-    if form.validate_on_submit():
-        last_employee = Employee.query.filter_by(department_id=form.department.data)\
+    departments = Department.query.all()  # fetch all departments
+    
+    if request.method == 'POST':
+        last_employee = Employee.query.filter_by(department_id=request.form['department']) \
                                      .order_by(Employee.id.desc()).first()
-        employee_id = generate_employee_id(form.department.data, last_employee.employee_id if last_employee else None)
+        employee_id = generate_employee_id(
+            request.form['department'],
+            last_employee.employee_id if last_employee else None
+        )
 
         employee = Employee(
             employee_id=employee_id,
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            middle_name=form.middle_name.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            address=form.address.data,
-            department_id=form.department.data,
-            position=form.position.data,
-            salary=form.salary.data,
-            date_hired=form.date_hired.data,
-            date_of_birth=form.date_of_birth.data,
-            gender=form.gender.data,
-            marital_status=form.marital_status.data,
-            emergency_contact=form.emergency_contact.data,
-            emergency_phone=form.emergency_phone.data,
-            active=form.active.data
+            first_name=request.form['first_name'],
+            last_name=request.form['last_name'],
+            middle_name=request.form.get('middle_name'),
+            email=request.form['email'],
+            phone=request.form['phone'],
+            address=request.form['address'],
+            department_id=request.form['department'],
+            position=request.form['position'],
+            salary=request.form['salary'],
+            date_hired=request.form['date_hired'],
+            date_of_birth=request.form['date_of_birth'],
+            gender=request.form['gender'],
+            marital_status=request.form['marital_status'],
+            emergency_contact=request.form['emergency_contact'],
+            emergency_phone=request.form['emergency_phone'],
+            active=True
         )
 
         try:
@@ -116,7 +120,11 @@ def add_employee():
             db.session.rollback()
             flash('Error adding employee. Please try again.', 'error')
 
-    return render_template('hr/admin/admin_add.html', form=form)
+    # pass departments to template
+    return render_template('hr/admin/admin_add.html', departments=departments)
+
+
+
 
 @hr_admin_bp.route('/employees/<int:employee_id>')
 @login_required

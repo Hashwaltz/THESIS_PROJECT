@@ -189,7 +189,7 @@ body {
 }
 .content-wrap {
   grid-area: content;
-  padding: 3em;
+  padding: 2em;
   overflow: auto;
 }
 .content-wrap .content-head {
@@ -388,7 +388,7 @@ body {
 .container form {
     position: relative;
     margin-top: 16px;
-    min-height: 490px;
+    min-height: 530px;
     background-color: #fff;
     overflow: hidden;
 }

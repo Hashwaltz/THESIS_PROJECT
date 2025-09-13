@@ -1,6 +1,5 @@
-{% extends 'hr/admin/admin_base.html' %} 
-{% block title %}Add New Employee{%endblock %} 
-
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Add New Employee{% endblock %}
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
@@ -8,158 +7,117 @@
   </header>
   <div class="container">
     <header>Personal Details</header>
-    <form action="#">
+
+    <!-- IMPORTANT: method="POST" so Flask receives form data -->
+    <form method="POST" action="{{ url_for('hr_admin.add_employee') }}">
       <div class="form first">
         <div class="details personal">
-          <span class="title"></span>
           <div class="fields">
+
             <div class="input-field">
-              <label>Full Name</label>
-              <input type="text" placeholder="Enter your name" required />
+              <label>First Name</label>
+              <input type="text" name="first_name" placeholder="Enter employee first name" required />
             </div>
+
             <div class="input-field">
-              <label>Date of Birth</label>
-              <input type="date" placeholder="Enter birth date" required />
+              <label>Middle Name</label>
+              <input type="text" name="middle_name" placeholder="Enter employee middle name" />
             </div>
+
+            <div class="input-field">
+              <label>Last Name</label>
+              <input type="text" name="last_name" placeholder="Enter employee last name" required />
+            </div>
+
             <div class="input-field">
               <label>Email</label>
-              <input type="text" placeholder="Enter your email" required />
+              <input type="email" name="email" placeholder="Enter employee email" required />
             </div>
+
             <div class="input-field">
               <label>Mobile Number</label>
-              <input type="number" placeholder="Enter mobile number" required />
+              <input type="text" name="phone" placeholder="Enter mobile number" required />
             </div>
+
+            <div class="input-field">
+              <label>Address</label>
+              <input type="text" name="address" placeholder="Enter Employee address" required />
+            </div>
+
+            <div class="input-field">
+              <label>Salary</label>
+              <input type="number" name="salary" placeholder="Enter salary" required />
+            </div>
+
+            <div class="input-field">
+              <label>Date of Birth</label>
+              <input type="date" name="date_of_birth" required />
+            </div>
+
+            <div class="input-field">
+              <label>Date Hired</label>
+              <input type="date" name="date_hired" required />
+            </div>
+
+            <div class="input-field">
+              <label>Position</label>
+              <select name="position" required>
+                <option disabled selected>Select position</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.name }}">{{ dept.name }}</option>
+                {% endfor %}  
+              </select>
+            </div>
+
             <div class="input-field">
               <label>Gender</label>
-              <select required>
+              <select name="gender" required>
                 <option disabled selected>Select gender</option>
                 <option>Male</option>
                 <option>Female</option>
-                <option>Others</option>
               </select>
             </div>
+
             <div class="input-field">
-              <label>Occupation</label>
-              <input type="text" placeholder="Enter your ccupation" required />
-            </div>
-          </div>
-        </div>
-        <div class="details ID">
-          <span class="title">Identity Details</span>
-          <div class="fields">
-            <div class="input-field">
-              <label>ID Type</label>
-              <input type="text" placeholder="Enter ID type" required />
-            </div>
-            <div class="input-field">
-              <label>ID Number</label>
-              <input type="number" placeholder="Enter ID number" required />
-            </div>
-            <div class="input-field">
-              <label>Issued Authority</label>
-              <input
-                type="text"
-                placeholder="Enter issued authority"
-                required
-              />
-            </div>
-            <div class="input-field">
-              <label>Issued State</label>
-              <input type="text" placeholder="Enter issued state" required />
-            </div>
-            <div class="input-field">
-              <label>Issued Date</label>
-              <input
-                type="date"
-                placeholder="Enter your issued date"
-                required
-              />
-            </div>
-            <div class="input-field">
-              <label>Expiry Date</label>
-              <input type="date" placeholder="Enter expiry date" required />
-            </div>
-          </div>
-          <button class="nextBtn">
-            <span class="btnText">Next</span>
-            <i class="uil uil-navigator"></i>
-          </button>
-        </div>
-      </div>
-      <div class="form second">
-        <div class="details address">
-          <span class="title">Address Details</span>
-          <div class="fields">
-            <div class="input-field">
-              <label>Address Type</label>
-              <input
-                type="text"
-                placeholder="Permanent or Temporary"
-                required
-              />
-            </div>
-            <div class="input-field">
-              <label>Nationality</label>
-              <input type="text" placeholder="Enter nationality" required />
-            </div>
-            <div class="input-field">
-              <label>State</label>
-              <input type="text" placeholder="Enter your state" required />
-            </div>
-            <div class="input-field">
-              <label>District</label>
-              <input type="text" placeholder="Enter your district" required />
-            </div>
-            <div class="input-field">
-              <label>Block Number</label>
-              <input type="number" placeholder="Enter block number" required />
-            </div>
-            <div class="input-field">
-              <label>Ward Number</label>
-              <input type="number" placeholder="Enter ward number" required />
-            </div>
-          </div>
-        </div>
-        <div class="details family">
-          <span class="title">Family Details</span>
-          <div class="fields">
-            <div class="input-field">
-              <label>Father Name</label>
-              <input type="text" placeholder="Enter father name" required />
-            </div>
-            <div class="input-field">
-              <label>Mother Name</label>
-              <input type="text" placeholder="Enter mother name" required />
-            </div>
-            <div class="input-field">
-              <label>Grandfather</label>
-              <input type="text" placeholder="Enter grandfther name" required />
-            </div>
-            <div class="input-field">
-              <label>Spouse Name</label>
-              <input type="text" placeholder="Enter spouse name" required />
-            </div>
-            <div class="input-field">
-              <label>Father in Law</label>
-              <input type="text" placeholder="Father in law name" required />
-            </div>
-            <div class="input-field">
-              <label>Mother in Law</label>
-              <input type="text" placeholder="Mother in law name" required />
-            </div>
-          </div>
-          <div class="buttons">
-            <div class="backBtn">
-              <i class="uil uil-navigator"></i>
-              <span class="btnText">Back</span>
+              <label>Marital Status</label>
+              <select name="marital_status" required>
+                <option disabled selected>Select status</option>
+                <option>Single</option>
+                <option>Married</option>
+                <option>Separated</option>
+                <option>Divorced</option>
+                <option>Widowed</option>
+              </select>
             </div>
 
-            <button class="sumbit">
-              <span class="btnText">Submit</span>
-              <i class="uil uil-navigator"></i>
-            </button>
+            <div class="input-field">
+              <label>Department</label>
+              <select name="department" required>
+                <option disabled selected>Select department</option>
+                <option value="1">Office of the Mayor</option>
+                <option value="2">Office of the Vice Mayor</option>
+                <option value="3">Sangguniang Bayan</option>
+                <option value="4">Municipal Budget Office</option>
+                <option value="5">Municipal Treasurer's</option>
+              </select>
+            </div>
+
+            <div class="input-field">
+              <label>Emergency Contact Name</label>
+              <input type="text" name="emergency_contact" placeholder="Enter emergency contact person" required />
+            </div>
+
+            <div class="input-field">
+              <label>Emergency Contact Number</label>
+              <input type="text" name="emergency_phone" placeholder="Enter emergency number" required />
+            </div>
           </div>
         </div>
+
+        <button type="submit" class="submit">
+          <span class="btnText">Submit</span>
+          <i class="uil uil-navigator"></i>
+        </button>
       </div>
     </form>
   </div>
