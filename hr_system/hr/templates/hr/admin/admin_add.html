@@ -94,11 +94,9 @@
               <label>Department</label>
               <select name="department" required>
                 <option disabled selected>Select department</option>
-                <option value="1">Office of the Mayor</option>
-                <option value="2">Office of the Vice Mayor</option>
-                <option value="3">Sangguniang Bayan</option>
-                <option value="4">Municipal Budget Office</option>
-                <option value="5">Municipal Treasurer's</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.id }}">{{ dept.name }}</option>
+                {% endfor %}
               </select>
             </div>
 

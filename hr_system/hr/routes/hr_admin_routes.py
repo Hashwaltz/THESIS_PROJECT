@@ -61,11 +61,12 @@ def dashboard():
         dept_counts=dept_counts
     )
 
+# ------------------------- Employees -------------------------
 
 @hr_admin_bp.route('/employees')
 @login_required
 @admin_required
-def employees():
+def view_employees():
     # Get all employees
     employees = Employee.query.all()
     departments = Department.query.all()
@@ -91,6 +92,7 @@ def add_employee():
             last_employee.employee_id if last_employee else None
         )
 
+        # Create Employee instance
         employee = Employee(
             employee_id=employee_id,
             first_name=request.form['first_name'],
@@ -111,27 +113,35 @@ def add_employee():
             active=True
         )
 
+        # Automatically create User account based on Employee info
+        existing_user = User.query.filter_by(email=employee.email).first()
+        if not existing_user:
+            user = User(
+                email=employee.email,
+                password=request.form['password'],  # Store plain text password
+                first_name=employee.first_name,
+                last_name=employee.last_name,
+                role='employee',  # default role
+                department_id=employee.department_id
+            )
+            db.session.add(user)
+            db.session.flush()  # flush to get user.id
+
+            # Link employee to the created user
+            employee.user_id = user.id
+
         try:
             db.session.add(employee)
             db.session.commit()
-            flash('Employee added successfully!', 'success')
+            flash('Employee and user account created successfully!', 'success')
             return redirect(url_for('hr_admin.employees'))
-        except Exception:
+        except Exception as e:
             db.session.rollback()
-            flash('Error adding employee. Please try again.', 'error')
+            flash(f'Error adding employee: {str(e)}', 'error')
 
-    # pass departments to template
     return render_template('hr/admin/admin_add.html', departments=departments)
 
 
-
-
-@hr_admin_bp.route('/employees/<int:employee_id>')
-@login_required
-@admin_required
-def view_employee(employee_id):
-    employee = Employee.query.get_or_404(employee_id)
-    return render_template('hr/admin/view_employee.html', employee=employee)
 
 @hr_admin_bp.route('/employees/<int:employee_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -156,6 +166,10 @@ def edit_employee(employee_id):
             flash('Error updating employee. Please try again.', 'error')
 
     return render_template('hr/edit_employee.html', form=form, employee=employee)
+
+
+
+
 
 # ------------------------- Attendance -------------------------
 @hr_admin_bp.route('/attendance')
