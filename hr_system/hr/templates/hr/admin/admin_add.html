@@ -1,5 +1,5 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %}Add New Employee{% endblock %}
+{% block title %}HR-AdminAdd Employee{% endblock %}
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
@@ -7,7 +7,19 @@
   </header>
   <div class="container">
     <header>Personal Details</header>
-
+      <!-- 🔹 Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
     <!-- IMPORTANT: method="POST" so Flask receives form data -->
     <form method="POST" action="{{ url_for('hr_admin.add_employee') }}">
       <div class="form first">
@@ -63,8 +75,8 @@
               <label>Position</label>
               <select name="position" required>
                 <option disabled selected>Select position</option>
-                {% for dept in departments %}
-                  <option value="{{ dept.name }}">{{ dept.name }}</option>
+                {% for pos in positions %}
+                  <option value="{{ pos.id }}">{{ pos.name }}</option>
                 {% endfor %}  
               </select>
             </div>

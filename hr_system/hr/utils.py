@@ -2,7 +2,10 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import current_app, request, jsonify
 from flask_login import current_user
+from hr_system.hr.models.hr_models import Department
 import requests
+
+
 
 # ------------------------
 # Role-based decorators
@@ -55,20 +58,18 @@ def calculate_working_days(start_date, end_date):
     
     return working_days
 
-def generate_employee_id(department, last_employee_id=None):
-    """Generate a unique employee ID based on department"""
-    dept_codes = {
-        'IT': 'IT',
-        'HR': 'HR',
-        'Finance': 'FN',
-        'Operations': 'OP',
-        'Marketing': 'MK',
-        'Sales': 'SL',
-        'Admin': 'AD'
-    }
-    
-    dept_code = dept_codes.get(department, 'EM')
-    
+def generate_employee_id(department_id, last_employee_id=None):
+   
+    # Get the department from DB
+    dept = Department.query.get(department_id)
+    if not dept:
+        dept_code = 'EM'  # default if not found
+    else:
+        # Use first 2-3 letters of department name as code
+        dept_code = ''.join([word[0] for word in dept.name.split()[:2]]).upper()
+        if len(dept_code) < 2:
+            dept_code = dept.name[:2].upper()
+
     if last_employee_id:
         try:
             last_num = int(last_employee_id.split('-')[-1])
@@ -77,8 +78,11 @@ def generate_employee_id(department, last_employee_id=None):
             new_num = 1
     else:
         new_num = 1
-    
+
     return f"{dept_code}-{new_num:04d}"
+
+
+
 
 def send_notification_email(to_email, subject, message):
     """Send notification email (placeholder for email functionality)"""

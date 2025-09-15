@@ -118,7 +118,7 @@
               </li>
 
               <li>
-                <a href="{{ url_for('hr_admin.employees') }}" >
+                <a href="{{ url_for('hr_admin.view_employees') }}" >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -154,7 +154,7 @@
               </li>
 
               <li>
-                <a href="#">
+                <a href="{{ url_for('hr_admin.edit_employee', employee_id=1) }}">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"

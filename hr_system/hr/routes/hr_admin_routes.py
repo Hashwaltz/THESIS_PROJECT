@@ -1,13 +1,15 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, current_app, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm, DepartmentForm
 from ..utils import admin_required, generate_employee_id, get_attendance_summary, get_current_month_range
 from .. import db
 from datetime import timedelta
+from sqlalchemy.orm import joinedload
 from collections import defaultdict
+from hr_system.hr.functions import parse_date
 
 
 hr_admin_bp = Blueprint('hr_admin', __name__)
@@ -61,51 +63,92 @@ def dashboard():
         dept_counts=dept_counts
     )
 
-# ------------------------- Employees -------------------------
 
+
+# ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
 @login_required
 @admin_required
 def view_employees():
-    # Get all employees
-    employees = Employee.query.all()
-    departments = Department.query.all()
+    # Get all employees with department and position loaded in one query
+    employees = Employee.query.options(
+        joinedload(Employee.department),
+        joinedload(Employee.position)
+    ).all()
 
     return render_template(
         'hr/admin/admin_view_employees.html',
-        employees=employees,
-        departments=departments
+        employees=employees
     )
+
+
+@hr_admin_bp.route('/employee/<int:employee_id>')
+@login_required
+@admin_required
+def get_employee(employee_id):
+    employee = Employee.query.options(
+        joinedload(Employee.department),
+        joinedload(Employee.position)
+    ).filter_by(id=employee_id).first()
+
+    if not employee:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    return jsonify({
+        'id': employee.id,
+        'employee_id': employee.employee_id,
+        'full_name': employee.get_full_name(),
+        'email': employee.email,
+        'phone': employee.phone,
+        'department': employee.department.name if employee.department else '-',
+        'position': employee.position.name if employee.position else '-',
+        'date_hired': employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-',
+        'status': 'Active' if employee.active else 'Inactive'
+    })
 
 
 @hr_admin_bp.route('/employees/add', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def add_employee():
-    departments = Department.query.all()  # fetch all departments
-    
     if request.method == 'POST':
-        last_employee = Employee.query.filter_by(department_id=request.form['department']) \
-                                     .order_by(Employee.id.desc()).first()
-        employee_id = generate_employee_id(
-            request.form['department'],
-            last_employee.employee_id if last_employee else None
+        department_id = request.form['department']
+        employee_id = generate_employee_id(department_id)
+
+        # Safely parse dates
+        date_hired = parse_date(request.form['date_hired'], "Date Hired")
+        date_of_birth = parse_date(request.form['date_of_birth'], "Date of Birth")
+
+        if not date_hired or not date_of_birth:
+            return redirect(url_for('hr_admin.add_employee'))
+
+        # --- 1. Create User first ---
+        default_password = "password123"
+        user = User(
+            username=request.form['email'],   # use email as username
+            email=request.form['email'],
+            role="employee",                  # default role
+            password=default_password         # no hashing since you don’t want it
         )
 
-        # Create Employee instance
+        db.session.add(user)
+        db.session.flush()  # ensures user.id is available before commit
+
+        # --- 2. Create Employee and link to User ---
         employee = Employee(
             employee_id=employee_id,
+            user_id=user.id,   # link employee to user
             first_name=request.form['first_name'],
             last_name=request.form['last_name'],
             middle_name=request.form.get('middle_name'),
             email=request.form['email'],
             phone=request.form['phone'],
             address=request.form['address'],
-            department_id=request.form['department'],
-            position=request.form['position'],
+            department_id=department_id,
+            position_id=request.form['position'],
             salary=request.form['salary'],
-            date_hired=request.form['date_hired'],
-            date_of_birth=request.form['date_of_birth'],
+            date_hired=date_hired,
+            date_of_birth=date_of_birth,
             gender=request.form['gender'],
             marital_status=request.form['marital_status'],
             emergency_contact=request.form['emergency_contact'],
@@ -113,61 +156,61 @@ def add_employee():
             active=True
         )
 
-        # Automatically create User account based on Employee info
-        existing_user = User.query.filter_by(email=employee.email).first()
-        if not existing_user:
-            user = User(
-                email=employee.email,
-                password=request.form['password'],  # Store plain text password
-                first_name=employee.first_name,
-                last_name=employee.last_name,
-                role='employee',  # default role
-                department_id=employee.department_id
-            )
-            db.session.add(user)
-            db.session.flush()  # flush to get user.id
+        db.session.add(employee)
+        db.session.commit()
 
-            # Link employee to the created user
-            employee.user_id = user.id
+        flash("Employee and user account created successfully!", "success")
+        return redirect(url_for('hr_admin.view_employees'))
 
-        try:
-            db.session.add(employee)
-            db.session.commit()
-            flash('Employee and user account created successfully!', 'success')
-            return redirect(url_for('hr_admin.employees'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error adding employee: {str(e)}', 'error')
-
-    return render_template('hr/admin/admin_add.html', departments=departments)
-
-
-
+    # GET request: render the form
+    departments = Department.query.all()
+    positions = Position.query.all()
+    return render_template(
+        'hr/admin/admin_add.html',
+        departments=departments,
+        positions=positions
+    )
+ 
 @hr_admin_bp.route('/employees/<int:employee_id>/edit', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
     form = EmployeeForm(obj=employee)
+    positions = Position.query.all()
+    departments = Department.query.all() 
 
     if form.validate_on_submit():
-        for field in ['first_name', 'last_name', 'middle_name', 'email', 'phone', 'address',
-                      'department_id', 'position', 'salary', 'date_hired', 'date_of_birth',
-                      'gender', 'marital_status', 'emergency_contact', 'emergency_phone', 'active']:
-            setattr(employee, field, getattr(form, field).data)
-        employee.updated_at = datetime.utcnow()
-
         try:
+            # Explicit mapping (safer)
+            employee.first_name = form.first_name.data
+            employee.last_name = form.last_name.data
+            employee.middle_name = form.middle_name.data
+            employee.email = form.email.data
+            employee.phone = form.phone.data
+            employee.address = form.address.data
+            employee.department_id = form.department_id.data
+            employee.position_id = form.position_id.data   # <-- important!
+            employee.salary = form.salary.data
+            employee.date_hired = form.date_hired.data
+            employee.date_of_birth = form.date_of_birth.data
+            employee.gender = form.gender.data
+            employee.marital_status = form.marital_status.data
+            employee.emergency_contact = form.emergency_contact.data
+            employee.emergency_phone = form.emergency_phone.data
+            employee.active = form.active.data
+            employee.updated_at = datetime.utcnow()
+
             db.session.commit()
             flash('Employee updated successfully!', 'success')
-            return redirect(url_for('hr_admin.view_employee', employee_id=employee.id))
-        except Exception:
+            return redirect(url_for('hr_admin.view_employees'))
+
+        except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Error updating employee {employee_id}: {e}")
             flash('Error updating employee. Please try again.', 'error')
 
-    return render_template('hr/edit_employee.html', form=form, employee=employee)
-
-
+    return render_template('hr/admin/admin_edit.html', form=form, employee=employee, position=positions, department=departments)
 
 
 
