@@ -180,25 +180,28 @@ def edit_employee(employee_id):
     positions = Position.query.all()
     departments = Department.query.all() 
 
-    if form.validate_on_submit():
+    if request.method == "POST":
         try:
-            # Explicit mapping (safer)
-            employee.first_name = form.first_name.data
-            employee.last_name = form.last_name.data
-            employee.middle_name = form.middle_name.data
-            employee.email = form.email.data
-            employee.phone = form.phone.data
-            employee.address = form.address.data
-            employee.department_id = form.department_id.data
-            employee.position_id = form.position_id.data   # <-- important!
-            employee.salary = form.salary.data
-            employee.date_hired = form.date_hired.data
-            employee.date_of_birth = form.date_of_birth.data
-            employee.gender = form.gender.data
-            employee.marital_status = form.marital_status.data
-            employee.emergency_contact = form.emergency_contact.data
-            employee.emergency_phone = form.emergency_phone.data
-            employee.active = form.active.data
+            # Explicit mapping from form fields
+            employee.first_name = request.form.get("first_name")
+            employee.last_name = request.form.get("last_name")
+            employee.middle_name = request.form.get("middle_name")
+            employee.email = request.form.get("email")
+            employee.phone = request.form.get("phone")
+            employee.address = request.form.get("address")
+            
+            # 👇 handle selects manually
+            employee.department_id = request.form.get("department")
+            employee.position_id = request.form.get("position")
+
+            employee.salary = request.form.get("salary") or None
+            employee.date_hired = request.form.get("date_hired") or None
+            employee.date_of_birth = request.form.get("date_of_birth") or None
+            employee.gender = request.form.get("gender")
+            employee.marital_status = request.form.get("marital_status")
+            employee.emergency_contact = request.form.get("emergency_contact")
+            employee.emergency_phone = request.form.get("emergency_phone")
+            employee.active = bool(request.form.get("active"))
             employee.updated_at = datetime.utcnow()
 
             db.session.commit()
@@ -210,7 +213,13 @@ def edit_employee(employee_id):
             current_app.logger.error(f"Error updating employee {employee_id}: {e}")
             flash('Error updating employee. Please try again.', 'error')
 
-    return render_template('hr/admin/admin_edit.html', form=form, employee=employee, position=positions, department=departments)
+    return render_template(
+        'hr/admin/admin_edit.html',
+        form=form,
+        employee=employee,
+        positions=positions,     # 👈 pass to template
+        departments=departments  # 👈 pass to template
+    )
 
 
 

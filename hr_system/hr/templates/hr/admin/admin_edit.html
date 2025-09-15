@@ -75,7 +75,7 @@
 
             <div class="input-field">
               <label>Position</label>
-              <select name="position_id" required>
+              <select name="position" required>
                 <option disabled selected></option>
                 {% for pos in positions %}
                   <option value="{{ pos.id }}" {% if employee.position_id == pos.id %}selected{% endif %}>
@@ -108,10 +108,10 @@
 
             <div class="input-field">
               <label>Department</label>
-              <select name="department_id" required>
+              <select name="department" required>
                 <option disabled selected>Select dept</option>
                 {% for dept in departments %}
-                  <option value="{{ dept.id }}" {% if employee.department_id == dept.id %} selected {% endif %}>
+                  <option value="{{ dept.id }}" {% if employee.department_id == dept.id %}selected{% endif %}>
                         {{ dept.name }}
                   </option>
                 {% endfor %}
