@@ -2,7 +2,7 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import current_app, request, jsonify
 from flask_login import current_user
-from hr_system.hr.models.hr_models import Department
+from hr_system.hr.models.hr_models import Department, Employee
 import requests
 
 
@@ -57,22 +57,26 @@ def calculate_working_days(start_date, end_date):
         current_date += timedelta(days=1)
     
     return working_days
-
-def generate_employee_id(department_id, last_employee_id=None):
-   
-    # Get the department from DB
+def generate_employee_id(department_id):
+    # Get department code
     dept = Department.query.get(department_id)
     if not dept:
-        dept_code = 'EM'  # default if not found
+        dept_code = 'EM'
     else:
-        # Use first 2-3 letters of department name as code
         dept_code = ''.join([word[0] for word in dept.name.split()[:2]]).upper()
         if len(dept_code) < 2:
             dept_code = dept.name[:2].upper()
 
-    if last_employee_id:
+    # Get last employee in this department
+    last_employee = (
+        Employee.query.filter_by(department_id=department_id)
+        .order_by(Employee.id.desc())  # highest id = latest
+        .first()
+    )
+
+    if last_employee:
         try:
-            last_num = int(last_employee_id.split('-')[-1])
+            last_num = int(last_employee.employee_id.split('-')[-1])
             new_num = last_num + 1
         except (ValueError, IndexError):
             new_num = 1
@@ -80,7 +84,6 @@ def generate_employee_id(department_id, last_employee_id=None):
         new_num = 1
 
     return f"{dept_code}-{new_num:04d}"
-
 
 
 

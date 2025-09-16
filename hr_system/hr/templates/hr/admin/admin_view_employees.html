@@ -1,13 +1,13 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %}HR Admin-View Employees{% endblock %}
+{% block title %}HR Admin - View Employees{% endblock %}
 
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1><b>View All Employees</b></h1> 
+    <h1><b>View All Employees</b></h1>
   </header>
 
-  <div class="container"> 
+  <div class="table-container">
     <div class="centered-container">
       <table class="responsive-table">
         <caption><b>Employee List</b></caption>
@@ -26,15 +26,15 @@
         <tbody>
           {% for employee in employees %}
           <tr>
-            <td>{{ employee.employee_id }}</td>
-            <td>{{ employee.get_full_name() }}</td>
-            <td>{{ employee.email }}</td>
-            <td>{{ employee.phone or '-' }}</td>
-            <td>{{ employee.department.name if employee.department else '-' }}</td>
-            <td>{{ employee.position.name if employee.position else '-' }}</td>
-            <td>{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
-            <td>
-              <a href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}">View|Edit</a>
+            <td data-label="Employee ID">{{ employee.employee_id }}</td>
+            <td data-label="Full Name">{{ employee.get_full_name() }}</td>
+            <td data-label="Email">{{ employee.email }}</td>
+            <td data-label="Phone">{{ employee.phone or '-' }}</td>
+            <td data-label="Department">{{ employee.department.name if employee.department else '-' }}</td>
+            <td data-label="Position">{{ employee.position.name if employee.position else '-' }}</td>
+            <td data-label="Date Hired">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
+            <td data-label="Actions">
+              <a href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}" class="btn-action">View | Edit</a>
             </td>
           </tr>
           {% else %}
@@ -44,8 +44,20 @@
           {% endfor %}
         </tbody>
       </table>
+      
+<!-- Pagination -->
+<div class="pagination">
+  {% if employees.has_prev %}
+    <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.prev_num) }}">Previous</a>
+  {% endif %}
+
+  Page {{ employees.page }} of {{ employees.pages }}
+
+  {% if employees.has_next %}
+    <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.next_num) }}">Next</a>
+  {% endif %}
+</div>
     </div>
   </div>
 </main>
-
 {% endblock %}

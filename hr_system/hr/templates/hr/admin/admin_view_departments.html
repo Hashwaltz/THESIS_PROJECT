@@ -1,0 +1,57 @@
+{% extends 'hr/admin/admin_base.html' %} 
+{% block title %}HR Admin - Departments{% endblock %}
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Departments</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption>
+          <b>Departments List</b>
+        </caption>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dept in departments.items %}
+          <tr>
+            <td data-label="ID">{{ dept.id }}</td>
+            <td data-label="Name">{{ dept.name }}</td>
+            <td data-label="Description">{{ dept.description or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3">No departments found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        {% if departments.has_prev %}
+        <a
+          href="{{ url_for('hr_admin.view_departments', page=departments.prev_num) }}"
+          >Previous</a
+        >
+        {% endif %}
+
+        <span>Page {{ departments.page }} of {{ departments.pages }}</span>
+
+        {% if departments.has_next %}
+        <a 
+          href="{{ url_for('hr_admin.view_departments', page=departments.next_num) }}"
+          >Next</a
+        >
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

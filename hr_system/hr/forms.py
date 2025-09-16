@@ -121,7 +121,7 @@ class LeaveApprovalForm(FlaskForm):
 # ------------------------
 
 class DepartmentForm(FlaskForm):
-    name = StringField('Department Name', validators=[DataRequired(), Length(min=2, max=100)])
-    description = TextAreaField('Description', validators=[Optional()])
-    head_id = SelectField('Department Head', coerce=int, validators=[Optional()])
-    submit = SubmitField('Save Department')
+    name = StringField("Department Name", validators=[DataRequired()])
+    description = TextAreaField("Description")
+    head_id = SelectField("Department Head", coerce=int, choices=[])
+    submit = SubmitField("Submit")

@@ -1,0 +1,57 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - View Users{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>View All Users</b></h1> 
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption><b>Users List</b></caption>
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td data-label="User ID">{{ user.id }}</td>
+            <td data-label="Full Name">{{ user.get_full_name() }}</td>
+            <td data-label="Email">{{ user.email }}</td>
+            <td data-label="Role">{{ user.role or '-' }}</td>
+            <td data-label="Department">{{ user.department.name if user.department else '-' }}</td>
+            <td data-label="Active">{{ 'Yes' if user.active else 'No' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6">No users found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <!-- Pagination -->
+<div class="pagination">
+  {% if users.has_prev %}
+    <a href="{{ url_for('hr_admin_bp.view_users', page=users.prev_num) }}">Previous</a>
+  {% endif %}
+
+  Page {{ users.page }} of {{ users.pages }}
+
+  {% if users.has_next %}
+    <a href="{{ url_for('hr_admin_bp.view_users', page=users.next_num) }}">Next</a>
+  {% endif %}
+</div>
+    </div>
+  </div>
+</main>
+
+{% endblock %}

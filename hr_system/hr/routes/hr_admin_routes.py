@@ -64,47 +64,42 @@ def dashboard():
     )
 
 
-
 # ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
 @login_required
 @admin_required
 def view_employees():
-    # Get all employees with department and position loaded in one query
+    # Get current page from query params (default to 1)
+    page = request.args.get('page', 1, type=int)
+
+    # Paginate employees with department and position
     employees = Employee.query.options(
         joinedload(Employee.department),
         joinedload(Employee.position)
-    ).all()
+    ).paginate(page=page, per_page=10)  # adjust per_page as needed
 
     return render_template(
         'hr/admin/admin_view_employees.html',
         employees=employees
     )
 
-
-@hr_admin_bp.route('/employee/<int:employee_id>')
+# ------------------------- Users -------------------------
+@hr_admin_bp.route('/users')
 @login_required
 @admin_required
-def get_employee(employee_id):
-    employee = Employee.query.options(
-        joinedload(Employee.department),
-        joinedload(Employee.position)
-    ).filter_by(id=employee_id).first()
+def view_users():
+    # Get current page from query params (default to 1)
+    page = request.args.get('page', 1, type=int)
 
-    if not employee:
-        return jsonify({'error': 'Employee not found'}), 404
+    # Paginate users
+    users = User.query.paginate(page=page, per_page=10)  # adjust per_page if needed
 
-    return jsonify({
-        'id': employee.id,
-        'employee_id': employee.employee_id,
-        'full_name': employee.get_full_name(),
-        'email': employee.email,
-        'phone': employee.phone,
-        'department': employee.department.name if employee.department else '-',
-        'position': employee.position.name if employee.position else '-',
-        'date_hired': employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-',
-        'status': 'Active' if employee.active else 'Inactive'
-    })
+    return render_template(
+        'hr/admin/admin_view_users.html',
+        users=users
+    )
+
+    
 
 
 @hr_admin_bp.route('/employees/add', methods=['GET', 'POST'])
@@ -113,8 +108,7 @@ def get_employee(employee_id):
 def add_employee():
     if request.method == 'POST':
         department_id = request.form['department']
-        employee_id = generate_employee_id(department_id)
-
+        new_employee_id = generate_employee_id(department_id)
         # Safely parse dates
         date_hired = parse_date(request.form['date_hired'], "Date Hired")
         date_of_birth = parse_date(request.form['date_of_birth'], "Date of Birth")
@@ -125,18 +119,20 @@ def add_employee():
         # --- 1. Create User first ---
         default_password = "password123"
         user = User(
-            username=request.form['email'],   # use email as username
             email=request.form['email'],
-            role="employee",                  # default role
-            password=default_password         # no hashing since you don’t want it
+            first_name=request.form['first_name'],   
+            last_name=request.form['last_name'],  
+            role="employee",
+            password=default_password
         )
+
 
         db.session.add(user)
         db.session.flush()  # ensures user.id is available before commit
 
         # --- 2. Create Employee and link to User ---
         employee = Employee(
-            employee_id=employee_id,
+            employee_id=new_employee_id,
             user_id=user.id,   # link employee to user
             first_name=request.form['first_name'],
             last_name=request.form['last_name'],
@@ -171,6 +167,8 @@ def add_employee():
         positions=positions
     )
  
+from datetime import datetime
+
 @hr_admin_bp.route('/employees/<int:employee_id>/edit', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -182,21 +180,31 @@ def edit_employee(employee_id):
 
     if request.method == "POST":
         try:
-            # Explicit mapping from form fields
+            # Explicit mapping from request.form
             employee.first_name = request.form.get("first_name")
             employee.last_name = request.form.get("last_name")
             employee.middle_name = request.form.get("middle_name")
             employee.email = request.form.get("email")
             employee.phone = request.form.get("phone")
             employee.address = request.form.get("address")
-            
-            # 👇 handle selects manually
-            employee.department_id = request.form.get("department")
-            employee.position_id = request.form.get("position")
 
-            employee.salary = request.form.get("salary") or None
-            employee.date_hired = request.form.get("date_hired") or None
-            employee.date_of_birth = request.form.get("date_of_birth") or None
+            # IDs -> convert to int
+            dept_id = request.form.get("department")
+            pos_id = request.form.get("position")
+            employee.department_id = int(dept_id) if dept_id else None
+            employee.position_id = int(pos_id) if pos_id else None
+
+            # Salary -> convert to float
+            salary_val = request.form.get("salary")
+            employee.salary = float(salary_val) if salary_val else None
+
+            # Dates -> convert string to date
+            date_hired_str = request.form.get("date_hired")
+            dob_str = request.form.get("date_of_birth")
+            employee.date_hired = datetime.strptime(date_hired_str, "%Y-%m-%d").date() if date_hired_str else None
+            employee.date_of_birth = datetime.strptime(dob_str, "%Y-%m-%d").date() if dob_str else None
+
+            # Other fields
             employee.gender = request.form.get("gender")
             employee.marital_status = request.form.get("marital_status")
             employee.emergency_contact = request.form.get("emergency_contact")
@@ -217,8 +225,8 @@ def edit_employee(employee_id):
         'hr/admin/admin_edit.html',
         form=form,
         employee=employee,
-        positions=positions,     # 👈 pass to template
-        departments=departments  # 👈 pass to template
+        positions=positions,
+        departments=departments
     )
 
 
@@ -243,7 +251,7 @@ def attendance():
     employees = Employee.query.filter_by(active=True).all()
 
     return render_template(
-        'hr/attendance.html',
+        'hr/admin/admin_view_attendance.html',
         attendances=attendances,
         employees=employees,
         date_filter=date_filter,
@@ -277,11 +285,12 @@ def add_attendance():
 
     return render_template('hr/add_attendance.html', form=form)
 
+
 # ------------------------- Leaves -------------------------
 @hr_admin_bp.route('/leaves')
 @login_required
 @admin_required
-def leaves():
+def view_leaves():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
 
@@ -290,7 +299,9 @@ def leaves():
         query = query.filter_by(status=status_filter)
 
     leaves = query.order_by(Leave.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('hr/leaves.html', leaves=leaves, status_filter=status_filter)
+    return render_template('hr/admin/admin_view_leaves.html', leaves=leaves, status_filter=status_filter)
+
+
 
 @hr_admin_bp.route('/leaves/<int:leave_id>/approve', methods=['POST'])
 @login_required
@@ -311,13 +322,21 @@ def approve_leave(leave_id):
 
     return redirect(url_for('hr_admin.leaves'))
 
+
 # ------------------------- Departments -------------------------
 @hr_admin_bp.route('/departments')
 @login_required
 @admin_required
-def departments():
-    departments = Department.query.all()
-    return render_template('hr/departments.html', departments=departments)
+def view_departments():
+    page = request.args.get('page', 1, type=int)
+    departments = Department.query.paginate(page=page, per_page=10)
+
+    return render_template(
+        'hr/admin/admin_view_departments.html',
+        departments=departments
+    )
+
+
 
 @hr_admin_bp.route('/departments/add', methods=['GET', 'POST'])
 @login_required

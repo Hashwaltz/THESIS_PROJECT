@@ -14,7 +14,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #f5f5fa;
+  background: #f8f9fa;
   font-size: 16px;
   line-height: 120%;
   font-family: Open Sans, Helvetica, sans-serif;
@@ -30,7 +30,7 @@ body {
 }
 .search-wrap {
   grid-area: search;
-  background: #fff;
+  background: #212529;
   border-bottom: 1px solid #ede8f0;
   display: flex;
   align-items: center;
@@ -93,7 +93,7 @@ body {
   grid-area: menu;
   padding-bottom: 3em;
   overflow: auto;
-  background: #fff;
+  background: #212529;
   border-right: 1px solid #ede8f0;
 }
 .menu-wrap .user {
@@ -120,9 +120,9 @@ body {
 .menu-wrap .user figcaption {
   margin: 0;
   padding: 0 0 0 1em;
-  color: #1b253d;
+  color: #ced4da;
   font-weight: 700;
-  font-size: 0.875em;
+  font-size: 1em;
   line-height: 100%;
 }
 .menu-wrap nav {
@@ -199,7 +199,7 @@ body {
 .content-wrap .content-head h1 {
   font-size: 1.9em;
   line-height: 100%;
-  color: #1b253d;
+  color: #495057;
   font-weight: 500;
   margin: 0;
   padding: 0;
@@ -357,7 +357,6 @@ body {
 }
 .container {
     position: relative;
-    max-width: 1000px;
     width: 100%;
     border-radius: 6px;
     padding: 30px;
@@ -370,7 +369,7 @@ body {
     position: relative;
     font-size: 20px;
     font-weight: 600;
-    color: #333;
+    color: #343a40;
 }
 
 .container header::before {
@@ -550,185 +549,88 @@ body {
   }
 }
 
-.responsive-table {
-  width: 100%;
-  margin-bottom: 1.5em;
-  border-spacing: 0;
-  
-  @media (min-width: $bp-bart) {
-    font-size: .9em; 
-  }
-  
-  @media (min-width: $bp-marge) {
-    font-size: 1em; 
-  }
-  
-  thead {
-    // Accessibly hide <thead> on narrow viewports
-    position: absolute;
-    clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
-    padding: 0;
-    border: 0;
-    height: 1px; 
-    width: 1px; 
-    overflow: hidden;
-    
-    @media (min-width: $bp-bart) {
-      // Unhide <thead> on wide viewports
-      position: relative;
-      clip: auto;
-      height: auto;
-      width: auto;
-      overflow: auto;
+    .table-container {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 30px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.20);
+      max-width: 1000px;
+      margin: auto;
+      margin-top: 20px;
     }
-    
-    th {
-      background-color: #4b84fe;
-      border: 1px solid #4b84fe;
-      font-weight: normal;
+
+    .table-container caption {
+      margin-bottom: 20px;
+      color: #343a40;
+      font-size: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #343a40;
+      color: #fff;
       text-align: center;
-      color: white;
-      
-      &:first-of-type {
-        text-align: left; 
+    }
+
+    thead th {
+      padding: 15px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #eee;
+      transition: 0.3s;
+    }
+
+    tbody tr:hover {
+      background: #f5f5f5;
+    }
+
+    tbody td {
+      padding: 15px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tbody tr {
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      tbody td {
+        padding: 10px;
+        text-align: right;
+        position: relative;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #555;
       }
     }
-  }
-  
-  // Set these items to display: block for narrow viewports
-  tbody,
-  tr,
-  th,
-  td {
-    display: block;
-    padding: 0;
-    text-align: left;
-    white-space: normal;
-    
-  }
-  
-  tr {   
-    @media (min-width: $bp-bart) {
-      // Undo display: block 
-      display: table-row; 
-    }
-  }
-  
-  th,
-  td {
-    padding: .5em;
-    vertical-align: middle;
-    
-    @media (min-width: $bp-lisa) {
-      padding: .75em .5em; 
-    }
-    
-    @media (min-width: $bp-bart) {
-      // Undo display: block 
-      display: table-cell;
-      padding: .5em;
-    }
-    
-    @media (min-width: $bp-marge) {
-      padding: .75em .5em; 
-    }
-    
-    @media (min-width: $bp-homer) {
-      padding: .75em; 
-    }
-  }
-  
-  caption {
-    margin-bottom: 1em;
-    font-size: 1em;
-    font-weight: bold;
-    text-align: center;
-    
-    @media (min-width: $bp-bart) {
-      font-size: 1.5em;
-    }
-  }
-  
-  tfoot {
-    font-size: .8em;
-    font-style: italic;
-    
-    @media (min-width: $bp-marge) {
-      font-size: .9em;
-    }
-  }
-  
-  tbody {
-    @media (min-width: $bp-bart) {
-      // Undo display: block 
-      display: table-row-group; 
-    }
-    
-    tr {
-      margin-bottom: 1em;
-      
-      @media (min-width: $bp-bart) {
-        // Undo display: block 
-        display: table-row;
-        border-width: 1px;
-      }
-      
-      &:last-of-type {
-        margin-bottom: 0; 
-      }
-      
-      &:nth-of-type(even) {
-        @media (min-width: $bp-bart) {
-          background-color: rgba(0,0,0,.12);
-        }
-      }
-    }
-    
-      text-align: center;
-      @media (min-width: $bp-lisa) {
-      }
-      
-      @media (min-width: $bp-bart) {
-        background-color: transparent;  
-        text-align: left;
-      }
-    }
-    
-    td {
-      text-align: center;
-      color:#808080;
-      border: 2px solid #818589;
-      
-      @media (min-width: $bp-bart) {
-        text-align: center; 
-      }
-      
-      &:last-of-type {
-        @media (min-width: $bp-bart) {
-        } 
-      }
-    }
-    
-    td[data-type=currency] {
-      text-align: right; 
-    }
-    
-    td[data-title]:before {
-      content: attr(data-title);
-      float: left;
-      font-size: .8em;
-      color:#808080;
-      @media (min-width: $bp-lisa) {
-        font-size: .9em; 
-      }
-      
-      @media (min-width: $bp-bart) {
-        // Don’t show data-title labels 
-        content: none; 
-      }
-    } 
-  }
-}
 
 .modal {
   display: none;
@@ -756,4 +658,93 @@ body {
   font-size: 22px;
   font-weight: bold;
   cursor: pointer;
+}
+
+.search-box form .fields {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.search-box form .fields .input-field {
+    display: flex;
+    width: calc(100% / 3 - 30px);
+    flex-direction: column;
+    margin: 4px 0;
+}
+
+.search-box .input-field label {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2e2e2e;
+}
+
+.search-box .input-field input,
+.search-box .input-field select {
+    outline: none;
+    font-size: 14px;
+    font-weight: 400;
+    color: #333;
+    border-radius: 5px;
+    border: 1px solid #aaa;
+    padding: 0 15px;
+    height: 42px;
+    margin: 8px 0;
+}
+
+.search-box .input-field input:focus,
+.search-box .input-field select:focus {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.13);
+}
+
+.search-box .input-field select,
+.search-box .input-field input[type="date"] {
+    color: #707070;
+}
+
+.search-box .input-field input[type="date"]:valid {
+    color: #333;
+}
+
+.search-box form button,
+.search-box form .backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 45px;
+    max-width: 200px;
+    width: 100%;
+    border: none;
+    outline: none;
+    color: #fff;
+    border-radius: 5px;
+    margin: 25px 0;
+    background-color: #4070f4;
+    transition: all 0.3s linear;
+    cursor: pointer;
+}
+
+.search-box form .btnText {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.search-box form button:hover {
+    background-color: #265df2;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.pagination a {
+  color: #4070f4;
+
+  text-decoration: none;
+
+  margin: 0 8px;
+  border-radius: 5px;
+  transition: background-color 0.3s, color 0.3s;
 }
