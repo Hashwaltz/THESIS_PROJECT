@@ -17,7 +17,15 @@ def index():
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('hr_admin.dashboard'))
+        role = current_user.role.lower()
+        if role == 'admin':
+            return redirect(url_for('hr_admin.dashboard'))
+        elif role == 'officer':
+            return redirect(url_for('hr_officer.hr_dashboard'))
+        elif role == 'dept_head':
+            return redirect(url_for('dept_head.dashboard'))
+        else:
+            return redirect(url_for('employee.dashboard'))
     
     form = LoginForm()
     if form.validate_on_submit():
@@ -38,7 +46,7 @@ def login():
             if role == 'admin':
                 return redirect(url_for('hr_admin.dashboard'))
             elif role == 'officer':
-                return redirect(url_for('hr_officer.dashboard'))
+                return redirect(url_for('hr_officer.hr_dashboard'))
             elif role == 'dept_head':
                 return redirect(url_for('dept_head.dashboard'))
             else:
@@ -47,7 +55,6 @@ def login():
             flash('Invalid email or password.', 'error')
 
     return render_template('auth/login.html', form=form)
-
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

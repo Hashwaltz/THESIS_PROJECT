@@ -1,18 +1,16 @@
-{% extends 'hr/admin/admin_base.html' %} 
-{% block title %}HR Admin - View Employees{% endblock %}
+{% extends 'hr/officer/officer_base.html' %}
+{% block title %}HR Officer - View Employees{% endblock %}
+
 {% block content %}
 <main class="content-wrap">
-  
   <header class="content-head">
-    <h1><b>Records</b></h1>
+    <h1><b>Employee Records</b></h1>
   </header>
 
   <div class="table-container">
     <div class="centered-container">
       <table class="responsive-table">
-        <caption>
-          <b>Employee List</b>
-        </caption>
+        <caption><b>Employee List</b></caption>
         <thead>
           <tr>
             <th>Employee ID</th>
@@ -22,32 +20,19 @@
             <th>Department</th>
             <th>Position</th>
             <th>Date Hired</th>
-            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for employee in employees %}
+          {% for employee in employees.items %}
           <tr>
             <td data-label="Employee ID">{{ employee.employee_id }}</td>
             <td data-label="Full Name">{{ employee.get_full_name() }}</td>
             <td data-label="Email">{{ employee.email }}</td>
             <td data-label="Phone">{{ employee.phone or '-' }}</td>
-            <td data-label="Department">
-              {{ employee.department.name if employee.department else '-' }}
-            </td>
-            <td data-label="Position">
-              {{ employee.position.name if employee.position else '-' }}
-            </td>
-            <td data-label="Date Hired">
-              {{ employee.updated_at.strftime('%Y-%m-%d') if employee.updated_at
-              else '-' }}
-            </td>
-           <td data-label="Status">
-            <span style="color: {{ 'green' if employee.active else 'red' }};">
-              {{ 'Active' if employee.active else 'Inactive' }}
-            </span>
-          </td>
+            <td data-label="Department">{{ employee.department.name if employee.department else '-' }}</td>
+            <td data-label="Position">{{ employee.position.name if employee.position else '-' }}</td>
+            <td data-label="Date Hired">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
             <td data-label="Actions">
               <a
                 href="#"
@@ -69,22 +54,19 @@
       <!-- Pagination -->
       <div class="pagination">
         {% if employees.has_prev %}
-        <a
-          href="{{ url_for('hr_admin_bp.view_employees', page=employees.prev_num) }}"
-          >Previous</a
-        >
-        {% endif %} Page {{ employees.page }} of {{ employees.pages }} {% if
-        employees.has_next %}
-        <a
-          href="{{ url_for('hr_admin_bp.view_employees', page=employees.next_num) }}"
-          >Next</a
-        >
+          <a href="{{ url_for('hr_officer.employees', page=employees.prev_num) }}">Previous</a>
+        {% endif %}
+
+        Page {{ employees.page }} of {{ employees.pages }}
+
+        {% if employees.has_next %}
+          <a href="{{ url_for('hr_officer.employees', page=employees.next_num) }}">Next</a>
         {% endif %}
       </div>
     </div>
   </div>
-
 </main>
+
 <!-- Modal -->
 <div id="employeeModal" class="modal">
   
@@ -111,7 +93,7 @@
         e.preventDefault();
         const empId = this.getAttribute("data-id");
 
-        const baseUrl = "{{ url_for('hr_admin.edit_employee', employee_id=0) }}";  
+        const baseUrl = "{{ url_for('hr_officer.edit_employee', employee_id=0) }}";  
         const url = baseUrl.replace("0", empId);
 
         fetch(url, {

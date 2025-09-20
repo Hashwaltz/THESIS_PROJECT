@@ -17,6 +17,8 @@
             <th>ID</th>
             <th>Name</th>
             <th>Description</th>
+            <th>Head</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -25,6 +27,18 @@
             <td data-label="ID">{{ dept.id }}</td>
             <td data-label="Name">{{ dept.name }}</td>
             <td data-label="Description">{{ dept.description or '-' }}</td>
+              <td>
+                {% if dept.head %}
+                  {{ dept.head.get_full_name() }}
+                {% else %}
+                  <em>No Head Assigned</em>
+                {% endif %}
+              </td>
+              <td data-label="Actions">
+              <a href="#" class="btn-action open-modal" data-id="{{ dept.id }}">
+                View | Edit
+              </a>
+            </td>
           </tr>
           {% else %}
           <tr>
@@ -54,4 +68,62 @@
     </div>
   </div>
 </main>
+
+
+<!-- Modal -->
+<div id="employeeModal" class="modal">
+  <div class="modal-content">
+    <div
+      class="modal-header"
+      style="display: flex; flex-direction: row; justify-content: space-between"
+    >
+      <h2 style="text-align: left; width: 100%; color: #495057">
+        Edit Department
+      </h2>
+      <span
+        class="modal-close"
+        style="font-size: 50px; cursor: pointer; color: #495057"
+        >&times;</span
+      >
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Form will be loaded here dynamically -->
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("employeeModal");
+    const modalBody = document.getElementById("modal-body");
+    const closeBtn = document.querySelector(".modal-close");
+
+    document.querySelectorAll(".open-modal").forEach((btn) => {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        const empId = this.getAttribute("data-id");
+
+        const baseUrl = "{{ url_for('hr_admin.edit_department', department_id=0) }}";
+        const url = baseUrl.replace("0", empId);
+
+        fetch(url, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        })
+          .then((res) => res.text())
+          .then((html) => {
+            modalBody.innerHTML = html;
+            modal.style.display = "block";
+          });
+      });
+    });
+
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+
+    window.addEventListener("click", (e) => {
+      if (e.target == modal) modal.style.display = "none";
+    });
+  });
+</script>
 {% endblock %}

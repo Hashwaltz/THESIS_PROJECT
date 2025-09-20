@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}HR Admin{% endblock %}</title>
+    <title>{% block title %}HR Officer{% endblock %}</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -22,10 +22,11 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style2.css') }}"
     />
-    <link
+    <link 
       rel="stylesheet"
       href="{{ url_for('static', filename='css/forms.css') }}"
-    />
+    />  
+
     <link
       rel="icon"
       type="image/png"
@@ -43,7 +44,6 @@
     <div class="dashboard">
       <aside class="search-wrap">
         <div class="search" style="display: flex; align-items: center; gap: 10px;">
-
           <label>
           <img
               src="{{ url_for('static', filename='img/logo2.avif') }}"
@@ -107,7 +107,7 @@
 
             <ul>
                  <li>
-                <a href="{{ url_for('hr_admin.dashboard') }}" >
+                <a href="{{ url_for('hr_officer.hr_dashboard') }}" >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -120,11 +120,11 @@
                       d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z"
                     />
                   </svg>
-                  Admin Dashboard                </a>
+                Dashboard                </a>
               </li>
 
               <li>
-                <a href="{{ url_for('hr_admin.view_employees') }}" >
+                <a href="{{ url_for('hr_officer.employees') }}" >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -137,41 +137,7 @@
                       d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z"
                     />
                   </svg>
-                  Employee Records
-                </a>
-              </li>
-
-              <li>
-                <a  href="{{ url_for('hr_admin.add_employee') }}">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
-                    />
-                  </svg>
-                  Add Employees
-                </a>
-              </li>
-
-              <li>
-                <a href="{{ url_for('hr_admin.view_users')}}">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M5.707 19.707L12 13.414l4.461 4.461L14.337 20H20v-5.663l-2.125 2.124L13.414 12l4.461-4.461L20 9.663V4h-5.663l2.124 2.125L12 10.586 5.707 4.293 4.293 5.707 10.586 12l-6.293 6.293z"
-                    ></path>
-                  </svg>
-                  View All Users
+                  Employees Records
                 </a>
               </li>
             </ul>
@@ -182,7 +148,7 @@
 
             <ul>
               <li>
-                <a href="{{ url_for('hr_admin.attendance') }}">
+                <a href="{{ url_for('hr_officer.attendance') }}">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -195,7 +161,7 @@
                       d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z"
                     />
                   </svg>
-                  View Attendance
+                  Attendance Records
                 </a>
               </li>
 
@@ -224,7 +190,7 @@
             <h3>Leave Management</h3>
             <ul>
               <li>
-                <a href="{{ url_for('hr_admin.view_leaves') }}">
+                <a href="{{url_for('hr_officer.view_leaves')}}">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -256,50 +222,6 @@
                   Approve/Deny Leaves
                 </a>
               </li>
-            </ul>
-          </section>
-
-          <section class="tools">
-            <h3>Department Management</h3>
-
-            <ul>
-              <li>
-                <a href="{{ url_for('hr_admin.view_departments') }}">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125Z"
-                    />
-                  </svg>
-                  View Departments
-                </a>
-              </li>
-
-              <li>
-                <a href="{{ url_for('hr_admin.add_department') }}">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M13 7L11 7 11 11 7 11 7 13 11 13 11 17 13 17 13 13 17 13 17 11 13 11z"
-                    ></path>
-                    <path
-                      d="M12,2C6.486,2,2,6.486,2,12s4.486,10,10,10c5.514,0,10-4.486,10-10S17.514,2,12,2z M12,20c-4.411,0-8-3.589-8-8 s3.589-8,8-8s8,3.589,8,8S16.411,20,12,20z"
-                    ></path>
-                  </svg>
-                  Add New Department
-                </a>
-              </li>
-
             </ul>
           </section>
 
@@ -365,5 +287,6 @@
       </header>
       <main class="content-wrap">{% block content %}{% endblock %}</main>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </body>
 </html>

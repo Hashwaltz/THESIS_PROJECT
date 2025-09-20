@@ -3,29 +3,29 @@
   <div class="edit-container">
     <header>Employee Details</header>
     <!-- IMPORTANT: method="POST" so Flask receives form data -->
-    <form method="POST" action="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}">
+    <form method="POST" action="{{ url_for('hr_officer.edit_employee', employee_id=employee.id) }}">
       <div class="form first">
         <div class="details personal">
           <div class="fields">
 
             <div class="input-field">
               <label>First Name</label>
-              <input type="text" name="first_name" value="{{ employee.first_name }}" required />
+              <input type="text" name="first_name" value="{{ employee.first_name }}" readonly />
             </div>
 
             <div class="input-field">
               <label>Middle Name</label>
-              <input type="text" name="middle_name" value="{{ employee.middle_name}}" />
+              <input type="text" name="middle_name" value="{{ employee.middle_name}}" readonly/>
             </div>
 
             <div class="input-field">
               <label>Last Name</label>
-              <input type="text" name="last_name" value="{{ employee.last_name}}" required />
+              <input type="text" name="last_name" value="{{ employee.last_name}}" readonly />
             </div>
 
             <div class="input-field">
               <label>Email</label>
-              <input type="email" name="email" value="{{ employee.email }}" required />
+              <input type="email" name="email" value="{{ employee.email }}" readonly/>
             </div>
 
             <div class="input-field">
@@ -40,22 +40,22 @@
 
             <div class="input-field">
               <label>Salary</label>
-              <input type="number" name="salary" id="salary" value="{{ employee.salary}}" required />
+              <input type="number" name="salary" id="salary" value="{{ employee.salary}}" readonly />
             </div>
 
             <div class="input-field">
               <label>Date of Birth</label>
-              <input type="date" name="date_of_birth" value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}" required />
+              <input type="date" name="date_of_birth" value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}" readonly/>
             </div>
 
             <div class="input-field">
               <label>Date Hired</label>
-              <input type="date" name="date_hired" value="{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '' }}" required />
+              <input type="date" name="date_hired" value="{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '' }}" readonly />
             </div>
 
             <div class="input-field">
               <label>Position</label>
-              <select name="position" required>
+              <select name="position" disabled>
                 <option disabled selected></option>
                 {% for pos in positions %}
                   <option value="{{ pos.id }}" {% if employee.position_id == pos.id %}selected{% endif %}>
@@ -67,7 +67,7 @@
 
             <div class="input-field">
               <label>Gender</label>
-              <select name="gender" required>
+              <select name="gender" disabled>
                 <option disabled selected>Select gender</option>
                 <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
                 <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
@@ -88,7 +88,7 @@
 
             <div class="input-field">
               <label>Department</label>
-              <select name="department" required>
+              <select name="department" disabled>
                 <option disabled selected>Select dept</option>
                 {% for dept in departments %}
                   <option value="{{ dept.id }}" {% if employee.department_id == dept.id %}selected{% endif %}>
@@ -100,7 +100,7 @@
 
           <div class="input-field">
               <label>Status</label>
-              <select name="status" required>
+              <select name="status" disabled>
                 <option disabled selected>Select Status</option>
                 <option value= 1 {% if employee.active == True %}selected{% endif %}>Active</option>
                 <option value= 0 {% if employee.active == False %}selected{% endif %}>Inactive</option>

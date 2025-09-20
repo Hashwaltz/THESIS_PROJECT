@@ -6,37 +6,46 @@ from ..models.hr_models import Employee, Attendance, Leave, Department, Position
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm, DepartmentForm
 from ..utils import admin_required, generate_employee_id, get_attendance_summary, get_current_month_range
 from .. import db
-from datetime import timedelta
+from datetime import timedelta, datetime
 from sqlalchemy.orm import joinedload
 from collections import defaultdict
 from hr_system.hr.functions import parse_date
 
 
+
 hr_admin_bp = Blueprint('hr_admin', __name__)
+
 
 # ------------------------- Dashboard -------------------------
 @hr_admin_bp.route('/dashboard')
 @login_required
 @admin_required
 def dashboard():
-    total_employees = Employee.query.filter_by(active=True).count()
-    total_users = User.query.count()
+    today = datetime.now().date()
+    total_employees = Employee.query.count()
+    total_users = User.query.filter_by(active=True).count()
+    total_inactive = User.query.filter_by(active=False).count()
     total_departments = Department.query.count()
 
     recent_employees = Employee.query.order_by(Employee.created_at.desc()).limit(5).all()
     recent_leaves = Leave.query.order_by(Leave.created_at.desc()).limit(5).all()
 
+   
+    # --- Graph Data (Current Month Data) ---
     start_date, end_date = get_current_month_range()
-    dates = []
-    present_counts, absent_counts, late_counts = [], [], []
+    
+    monthly_dates = []
+    monthly_present_counts = []
+    monthly_absent_counts = []
+    monthly_late_counts = []
     
     current_date = start_date
     while current_date <= end_date:
-        records = Attendance.query.filter_by(date=current_date).all()
-        dates.append(current_date.strftime("%b %d"))  # e.g. Sep 01
-        present_counts.append(len([r for r in records if r.status == "Present"]))
-        absent_counts.append(len([r for r in records if r.status == "Absent"]))
-        late_counts.append(len([r for r in records if r.status == "Late"]))
+        records_on_date = Attendance.query.filter_by(date=current_date).all()
+        monthly_dates.append(current_date.strftime("%b %d")) # e.g. Sep 01
+        monthly_present_counts.append(len([r for r in records_on_date if r.status == "Present"]))
+        monthly_absent_counts.append(len([r for r in records_on_date if r.status == "Absent"]))
+        monthly_late_counts.append(len([r for r in records_on_date if r.status == "Late"]))
         current_date += timedelta(days=1)
 
     # Employees per department
@@ -55,12 +64,13 @@ def dashboard():
         total_departments=total_departments,
         recent_employees=recent_employees,
         recent_leaves=recent_leaves,
-        dates=dates,
-        present_counts=present_counts,
-        absent_counts=absent_counts,
-        late_counts=late_counts,
+        monthly_dates=monthly_dates,
+        monthly_present_counts=monthly_present_counts,
+        monthly_absent_counts=monthly_absent_counts,
+        monthly_late_counts=monthly_late_counts,
         dept_labels=dept_labels,
-        dept_counts=dept_counts
+        dept_counts=dept_counts,
+        total_inactive=total_inactive
     )
 
 
@@ -82,25 +92,7 @@ def view_employees():
         'hr/admin/admin_view_employees.html',
         employees=employees
     )
-
-# ------------------------- Users -------------------------
-@hr_admin_bp.route('/users')
-@login_required
-@admin_required
-def view_users():
-    # Get current page from query params (default to 1)
-    page = request.args.get('page', 1, type=int)
-
-    # Paginate users
-    users = User.query.paginate(page=page, per_page=10)  # adjust per_page if needed
-
-    return render_template(
-        'hr/admin/admin_view_users.html',
-        users=users
-    )
-
     
-
 
 @hr_admin_bp.route('/employees/add', methods=['GET', 'POST'])
 @login_required
@@ -166,17 +158,15 @@ def add_employee():
         departments=departments,
         positions=positions
     )
- 
-from datetime import datetime
 
-@hr_admin_bp.route('/employees/<int:employee_id>/edit', methods=['GET', 'POST'])
+
+@hr_admin_bp.route("/employees/<int:employee_id>/edit", methods=["GET","POST"])
 @login_required
 @admin_required
 def edit_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
-    form = EmployeeForm(obj=employee)
     positions = Position.query.all()
-    departments = Department.query.all() 
+    departments = Department.query.all()
 
     if request.method == "POST":
         try:
@@ -188,17 +178,17 @@ def edit_employee(employee_id):
             employee.phone = request.form.get("phone")
             employee.address = request.form.get("address")
 
-            # IDs -> convert to int
+            # Foreign Keys
             dept_id = request.form.get("department")
             pos_id = request.form.get("position")
             employee.department_id = int(dept_id) if dept_id else None
             employee.position_id = int(pos_id) if pos_id else None
 
-            # Salary -> convert to float
+            # Salary
             salary_val = request.form.get("salary")
             employee.salary = float(salary_val) if salary_val else None
 
-            # Dates -> convert string to date
+            # Dates
             date_hired_str = request.form.get("date_hired")
             dob_str = request.form.get("date_of_birth")
             employee.date_hired = datetime.strptime(date_hired_str, "%Y-%m-%d").date() if date_hired_str else None
@@ -209,8 +199,10 @@ def edit_employee(employee_id):
             employee.marital_status = request.form.get("marital_status")
             employee.emergency_contact = request.form.get("emergency_contact")
             employee.emergency_phone = request.form.get("emergency_phone")
-            employee.active = bool(request.form.get("active"))
+            active = request.form.get("status")
+            employee.active = bool(active)
             employee.updated_at = datetime.utcnow()
+            
 
             db.session.commit()
             flash('Employee updated successfully!', 'success')
@@ -221,14 +213,89 @@ def edit_employee(employee_id):
             current_app.logger.error(f"Error updating employee {employee_id}: {e}")
             flash('Error updating employee. Please try again.', 'error')
 
+    # 🔹 If request is AJAX, only return the form partial (used in modal)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template(
+            "hr/admin/admin_edit.html",
+            employee=employee,
+            positions=positions,
+            departments=departments
+        )
+
+    # 🔹 Otherwise return full page
     return render_template(
-        'hr/admin/admin_edit.html',
-        form=form,
+        "hr/admin/admin_edit.html",
         employee=employee,
         positions=positions,
         departments=departments
     )
 
+
+
+# ------------------------- Users -------------------------
+@hr_admin_bp.route('/users')
+@login_required
+@admin_required
+def view_users():
+    # Get current page from query params (default to 1)
+    page = request.args.get('page', 1, type=int)
+
+    # Paginate users
+    users = User.query.paginate(page=page, per_page=10)  # adjust per_page if needed
+    
+    department = Department.query.all()
+    return render_template(
+        'hr/admin/admin_view_users.html',
+        users=users,
+        department=department
+    )
+
+
+
+@hr_admin_bp.route("/user/<int:user_id>/edit", methods=["GET","POST"])
+@login_required
+@admin_required
+def edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    positions = Position.query.all()
+    departments = Department.query.all()
+
+    if request.method == "POST":
+        try:
+            # Explicit mapping from request.form
+            user.email = request.form.get("email")
+            user.first_name = request.form.get("first_name")
+            user.last_name = request.form.get("last_name")
+            user.role = request.form.get("role")
+            active = request.form.get("status")
+            user.active = bool(active)
+        
+
+            db.session.commit()
+            flash('User updated successfully!', 'success')
+            return redirect(url_for('hr_admin.view_users'))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating employee {user_id}: {e}")
+            flash('Error updating user. Please try again.', 'error')
+
+    # 🔹 If request is AJAX, only return the form partial (used in modal)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template(
+            "hr/admin/edit_user.html",
+            user=user,
+            positions=positions,
+            departments=departments
+        )
+
+    # 🔹 Otherwise return full page
+    return render_template(
+        "hr/admin/edit_user.html",
+        user=user,
+        positions=positions,
+        departments=departments
+    )
 
 
 # ------------------------- Attendance -------------------------
@@ -286,6 +353,48 @@ def add_attendance():
     return render_template('hr/add_attendance.html', form=form)
 
 
+
+@hr_admin_bp.route('/attendance/<int:attendance_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required # Adjust as needed (e.g., @officer_required)
+def edit_attendance(attendance_id):
+    attendance_record = Attendance.query.get_or_404(attendance_id)
+    form = AttendanceForm(obj=attendance_record)
+    form.employee_id.choices = [(e.id, f"{e.employee_id} - {e.get_full_name()}") for e in Employee.query.filter_by(active=True).all()]
+
+    if form.validate_on_submit():
+        try:
+            form.populate_obj(attendance_record) # Populates the object with form data
+            attendance_record.updated_at = datetime.utcnow() # Add an update timestamp if you have one
+            db.session.commit()
+            flash('Attendance record updated successfully!', 'success')
+            return redirect(url_for('hr_admin.attendance')) # Redirect to the main attendance view
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating attendance record {attendance_id}: {e}")
+            flash('Error updating attendance record. Please try again.', 'error')
+    
+    # If it's a GET request or form validation failed
+    return render_template('hr/admin/admin_edit_attendance.html', form=form, attendance_record=attendance_record)
+
+
+@hr_admin_bp.route('/attendance/<int:attendance_id>/delete', methods=['POST'])
+@login_required
+@admin_required # Adjust as needed (e.g., @officer_required)
+def delete_attendance(attendance_id):
+    attendance_record = Attendance.query.get_or_404(attendance_id)
+    try:
+        db.session.delete(attendance_record)
+        db.session.commit()
+        flash('Attendance record deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting attendance record {attendance_id}: {e}")
+        flash('Error deleting attendance record. Please try again.', 'error')
+
+    return redirect(url_for('hr_admin.attendance'))
+
+
 # ------------------------- Leaves -------------------------
 @hr_admin_bp.route('/leaves')
 @login_required
@@ -323,6 +432,7 @@ def approve_leave(leave_id):
     return redirect(url_for('hr_admin.leaves'))
 
 
+
 # ------------------------- Departments -------------------------
 @hr_admin_bp.route('/departments')
 @login_required
@@ -330,6 +440,7 @@ def approve_leave(leave_id):
 def view_departments():
     page = request.args.get('page', 1, type=int)
     departments = Department.query.paginate(page=page, per_page=10)
+    
 
     return render_template(
         'hr/admin/admin_view_departments.html',
@@ -360,7 +471,56 @@ def add_department():
             db.session.rollback()
             flash('Error adding department. Please try again.', 'error')
 
-    return render_template('hr/add_department.html', form=form)
+    return render_template('hr/admin/admin_add_dept.html', form=form)
+
+
+
+
+@hr_admin_bp.route("/department/<int:department_id>/edit", methods=["GET","POST"])
+@login_required
+@admin_required
+def edit_department(department_id):
+    department = Department.query.get_or_404(department_id)
+    employees = Employee.query.filter_by(department_id=department_id).all()
+    
+
+    if request.method == "POST":
+        try:
+            # Explicit mapping from request.form
+            department.name = request.form.get("name") or department.name
+            head_id = request.form.get("dept_head")
+            department.head_id = int(head_id) if head_id else department.head_id
+            department.description = request.form.get("description") or department.description
+
+            db.session.commit()
+            flash('Department updated successfully!', 'success')
+            return redirect(url_for('hr_admin.view_departments'))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating employee {department_id}: {e}")
+            flash('Error updating department. Please try again.', 'error')
+
+    # 🔹 If request is AJAX, only return the form partial (used in modal)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template(
+            "hr/admin/edit_dept.html",
+            department=department, 
+            employees=employees
+        )
+
+    # 🔹 Otherwise return full page
+    return render_template(
+        "hr/admin/edit_dept.html",
+        department=department,
+        employees=employees
+    )
+
+
+
+
+
+
 
 # ------------------------- Users -------------------------
 @hr_admin_bp.route('/users')
