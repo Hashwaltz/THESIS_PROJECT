@@ -1,19 +1,17 @@
-{% extends 'hr/officer/officer_base.html' %}
-{% block title %}HR Officer - View Employees{% endblock %}
-
+{% extends 'hr/head/head_base.html' %} 
+{% block title %}Department Head - Employees{% endblock %}
 {% block content %}
 <main class="content-wrap">
+  
   <header class="content-head">
     <h1><b>Employee Records</b></h1>
   </header>
 
   <div class="table-container">
     <div class="centered-container">
-
-      <!-- Search & Filter -->
-       <!-- Search bar -->
+      <!-- Search bar -->
        <div class="searching">
-            <form method="get" action="{{ url_for('hr_officer.employees') }}" class="search-form">
+            <form method="get" action="{{ url_for('dept_head.employees') }}" class="search-form">
                 <div class="fields">
                     <div class="input-field">
                         <input type="text" name="search" value="{{ search }}" placeholder="Search employees...">
@@ -22,7 +20,6 @@
                 </div>
             </form>
         </div>
-
 
       <table class="responsive-table">
         <caption><b>Employee List</b></caption>
@@ -35,32 +32,40 @@
             <th>Department</th>
             <th>Position</th>
             <th>Date Hired</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for employee in employees.items %}
+          {% for employee in employees %}
           <tr>
             <td data-label="Employee ID">{{ employee.employee_id }}</td>
             <td data-label="Full Name">{{ employee.get_full_name() }}</td>
             <td data-label="Email">{{ employee.email }}</td>
             <td data-label="Phone">{{ employee.phone or '-' }}</td>
-            <td data-label="Department">{{ employee.department.name if employee.department else '-' }}</td>
-            <td data-label="Position">{{ employee.position.name if employee.position else '-' }}</td>
-            <td data-label="Date Hired">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
+            <td data-label="Department">
+              {{ employee.department.name if employee.department else '-' }}
+            </td>
+            <td data-label="Position">
+              {{ employee.position.name if employee.position else '-' }}
+            </td>
+            <td data-label="Date Hired">
+              {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
+            </td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if employee.active else 'red' }};">
+                {{ 'Active' if employee.active else 'Inactive' }}
+              </span>
+            </td>
             <td data-label="Actions">
-              <a
-                href="#"
-                class="btn-action open-modal"
-                data-id="{{ employee.id }}"
-              >
-                View | Edit
+              <a href="#" class="btn-action open-modal" data-id="{{ employee.id }}">
+                View
               </a>
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="8">No employees found.</td>
+            <td colspan="9">No employees found.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -69,33 +74,32 @@
       <!-- Pagination -->
       <div class="pagination">
         {% if employees.has_prev %}
-          <a href="{{ url_for('hr_officer.employees', page=employees.prev_num) }}">Previous</a>
+        <a href="{{ url_for('dept_head_bp.employees', page=employees.prev_num, search=search) }}">Previous</a>
         {% endif %}
 
         Page {{ employees.page }} of {{ employees.pages }}
 
         {% if employees.has_next %}
-          <a href="{{ url_for('hr_officer.employees', page=employees.next_num) }}">Next</a>
+        <a href="{{ url_for('dept_head_bp.employees', page=employees.next_num, search=search) }}">Next</a>
         {% endif %}
       </div>
     </div>
   </div>
+
 </main>
 
 <!-- Modal -->
 <div id="employeeModal" class="modal">
-  
-    <div class="modal-content">
-      <div class="modal-header" style=" display: flex; flex-direction: row; justify-content: space-between;">
-        <h2 style="text-align:left; width: 100%; color:#495057;">Edit Employee</h2>
-        <span class="modal-close" style="font-size: 50px; cursor: pointer;color: #495057;">&times;</span>
-      </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Form will be loaded here dynamically -->
-      </div>
+  <div class="modal-content">
+    <div class="modal-header" style="display: flex; flex-direction: row; justify-content: space-between;">
+      <h2 style="text-align:left; width: 100%; color:#495057;">Employee Details</h2>
+      <span class="modal-close" style="font-size: 50px; cursor: pointer;color: #495057;">&times;</span>
     </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Form will be loaded here dynamically -->
+    </div>
+  </div>
 </div>
-
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -108,7 +112,7 @@
         e.preventDefault();
         const empId = this.getAttribute("data-id");
 
-        const baseUrl = "{{ url_for('hr_officer.edit_employee', employee_id=0) }}";  
+        const baseUrl = "{{ url_for('dept_head.edit_employee', employee_id=0) }}";  
         const url = baseUrl.replace("0", empId);
 
         fetch(url, {

@@ -39,6 +39,13 @@ class User(UserMixin, db.Model):
         foreign_keys="[Leave.approved_by]"
     )
 
+    # ✅ Add this relationship
+    department = db.relationship(
+        "Department",
+        backref="users",
+        foreign_keys=[department_id]
+    )
+
     def __repr__(self):
         return f'<User {self.email}>'
 

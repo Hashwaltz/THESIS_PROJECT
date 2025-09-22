@@ -73,24 +73,38 @@ def dashboard():
         total_inactive=total_inactive
     )
 
-
 # ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
 @login_required
 @admin_required
 def view_employees():
+    # Get search query
+    search = request.args.get('search', '')
+
     # Get current page from query params (default to 1)
     page = request.args.get('page', 1, type=int)
 
-    # Paginate employees with department and position
-    employees = Employee.query.options(
+    # Base query with joins
+    query = Employee.query.options(
         joinedload(Employee.department),
         joinedload(Employee.position)
-    ).paginate(page=page, per_page=10)  # adjust per_page as needed
+    )
+
+    # Apply search if provided
+    if search:
+        query = query.filter(
+            Employee.first_name.ilike(f"%{search}%") |
+            Employee.last_name.ilike(f"%{search}%") |
+            Employee.email.ilike(f"%{search}%")
+        )
+
+    # Paginate employees
+    employees = query.paginate(page=page, per_page=10)
 
     return render_template(
         'hr/admin/admin_view_employees.html',
-        employees=employees
+        employees=employees,
+        search=search   # pass back search so input keeps value
     )
     
 

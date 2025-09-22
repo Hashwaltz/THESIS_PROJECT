@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave
+from ..models.hr_models import Employee, Attendance, Leave, Department
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm
 from ..utils import hr_officer_required, get_attendance_summary, get_current_month_range
 from .. import db
@@ -67,7 +67,6 @@ def hr_dashboard():
     )
 
 
-
 @hr_officer_bp.route('/employees')
 @login_required
 @hr_officer_required
@@ -76,26 +75,34 @@ def employees():
     search = request.args.get('search', '')
     department = request.args.get('department', '')
 
+    # Base query (only active employees)
     query = Employee.query.filter_by(active=True)
 
+    # Search by name or employee_id
     if search:
         query = query.filter(
-            (Employee.first_name.contains(search)) |
-            (Employee.last_name.contains(search)) |
-            (Employee.employee_id.contains(search))
+            (Employee.first_name.ilike(f"%{search}%")) |
+            (Employee.last_name.ilike(f"%{search}%")) |
+            (Employee.employee_id.ilike(f"%{search}%"))
         )
 
+    # Filter by department if selected
     if department:
-        query = query.filter_by(department_id=department)  # Make sure to filter by ID
+        query = query.filter_by(department_id=department)
 
     employees = query.paginate(page=page, per_page=10, error_out=False)
 
+    # Fetch all departments for dropdown
+    departments = Department.query.all()
+
     return render_template(
-        'hr//officer/officer_view_emp.html',
+        'hr/officer/officer_view_emp.html',
         employees=employees,
         search=search,
-        selected_department=department
+        selected_department=department,
+        departments=departments
     )
+
 
 # ==========================
 # HR Officer - Edit Employee (Limited Permissions)

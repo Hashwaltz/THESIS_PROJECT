@@ -4,6 +4,7 @@ from flask import current_app, request, jsonify
 from flask_login import current_user
 from hr_system.hr.models.hr_models import Department, Employee
 import requests
+from sqlalchemy import func, case
 
 
 
@@ -57,6 +58,8 @@ def calculate_working_days(start_date, end_date):
         current_date += timedelta(days=1)
     
     return working_days
+
+
 def generate_employee_id(department_id):
     # Get department code
     dept = Department.query.get(department_id)
@@ -92,30 +95,72 @@ def send_notification_email(to_email, subject, message):
     print(f"Email to {to_email}: {subject} - {message}")
     return True
 
+
+
 def get_attendance_summary(employee_id, start_date, end_date):
-    """Get attendance summary for an employee in a date range"""
-    # ✅ Relative import
+    """Get attendance summary for a single employee in a date range"""
     from .models.hr_models import Attendance
-    
+
     query = Attendance.query.filter(
         Attendance.date >= start_date,
         Attendance.date <= end_date
     )
-    
+
     if employee_id:
         query = query.filter(Attendance.employee_id == employee_id)
-    
+
     attendances = query.all()
-    
-    summary = {
+
+    return {
         'total_days': len(attendances),
         'present': len([a for a in attendances if a.status == 'Present']),
         'absent': len([a for a in attendances if a.status == 'Absent']),
         'late': len([a for a in attendances if a.status == 'Late']),
         'half_day': len([a for a in attendances if a.status == 'Half Day'])
     }
-    
-    return summary
+
+
+def get_department_attendance_summary(department_id, start_date, end_date):
+    """Get aggregated attendance summary for a department in a date range"""
+    from .models.hr_models import Attendance, Employee
+
+    query = Attendance.query.join(Employee).filter(
+        Employee.department_id == department_id,
+        Attendance.date >= start_date,
+        Attendance.date <= end_date
+    )
+
+    # Totals
+    total_present = query.filter(Attendance.status == "Present").count()
+    total_absent = query.filter(Attendance.status == "Absent").count()
+    total_late = query.filter(Attendance.status == "Late").count()
+    total_half_day = query.filter(Attendance.status == "Half Day").count()
+
+    # Daily breakdown for charts
+    daily_records = (
+        query.with_entities(
+            Attendance.date,
+            func.sum(case((Attendance.status == "Present", 1), else_=0)),
+            func.sum(case((Attendance.status == "Absent", 1), else_=0)),
+            func.sum(case((Attendance.status == "Late", 1), else_=0))
+        )
+        .group_by(Attendance.date)
+        .order_by(Attendance.date)
+        .all()
+    )
+
+
+    return {
+        "total_present": total_present,
+        "total_absent": total_absent,
+        "total_late": total_late,
+        "total_half_day": total_half_day,
+        "dates": [str(r[0]) for r in daily_records],
+        "present_counts": [int(r[1]) for r in daily_records],
+        "absent_counts": [int(r[2]) for r in daily_records],
+        "late_counts": [int(r[3]) for r in daily_records],
+    }
+
 
 def get_leave_balance(employee_id, leave_type):
     """Get leave balance for an employee (placeholder)"""

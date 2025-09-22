@@ -2,8 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-
-from hr_system.config import Config  # absolute import from your project root
+from hr_system.config import Config
 
 # Extensions
 db = SQLAlchemy()
@@ -11,13 +10,19 @@ login_manager = LoginManager()
 migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__, static_folder="static", template_folder="templates")
+    app = Flask(
+        __name__,
+        static_folder="static",
+        template_folder="templates",
+        instance_path=Config.INSTANCE_PATH,   # ✅ force to use Thesis/instance
+        instance_relative_config=False        # ✅ stop auto-creating hr_system/instance
+    )
+
 
     app.config.from_object(Config)
 
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["DEBUG"] = True
-
 
     # Initialize extensions
     db.init_app(app)

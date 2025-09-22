@@ -1,14 +1,33 @@
-{% extends 'hr/admin/admin_base.html' %} 
-{% block title %}HR Admin - View Employees{% endblock %}
-{% block content %}
+{% extends 'hr/admin/admin_base.html' %} {% block title %}HR Admin - View
+Employees{% endblock %} {% block content %}
 <main class="content-wrap">
-  
   <header class="content-head">
     <h1><b>Records</b></h1>
   </header>
 
   <div class="table-container">
     <div class="centered-container">
+      <!-- Search bar -->
+      <div class="searching">
+        <form
+          method="get"
+          action="{{ url_for('hr_admin.view_employees') }}"
+          class="search-form"
+        >
+          <div class="fields">
+            <div class="input-field">
+              <input
+                type="text"
+                name="search"
+                value="{{ search }}"
+                placeholder="Search employees..."
+              />
+              <button type="submit">Search</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
       <table class="responsive-table">
         <caption>
           <b>Employee List</b>
@@ -43,11 +62,11 @@
               {{ employee.updated_at.strftime('%Y-%m-%d') if employee.updated_at
               else '-' }}
             </td>
-           <td data-label="Status">
-            <span style="color: {{ 'green' if employee.active else 'red' }};">
-              {{ 'Active' if employee.active else 'Inactive' }}
-            </span>
-          </td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if employee.active else 'red' }};">
+                {{ 'Active' if employee.active else 'Inactive' }}
+              </span>
+            </td>
             <td data-label="Actions">
               <a
                 href="#"
@@ -83,22 +102,28 @@
       </div>
     </div>
   </div>
-
 </main>
 <!-- Modal -->
 <div id="employeeModal" class="modal">
-  
-    <div class="modal-content">
-      <div class="modal-header" style=" display: flex; flex-direction: row; justify-content: space-between;">
-        <h2 style="text-align:left; width: 100%; color:#495057;">Edit Employee</h2>
-        <span class="modal-close" style="font-size: 50px; cursor: pointer;color: #495057;">&times;</span>
-      </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Form will be loaded here dynamically -->
-      </div>
+  <div class="modal-content">
+    <div
+      class="modal-header"
+      style="display: flex; flex-direction: row; justify-content: space-between"
+    >
+      <h2 style="text-align: left; width: 100%; color: #495057">
+        Edit Employee
+      </h2>
+      <span
+        class="modal-close"
+        style="font-size: 50px; cursor: pointer; color: #495057"
+        >&times;</span
+      >
     </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Form will be loaded here dynamically -->
+    </div>
+  </div>
 </div>
-
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -111,7 +136,8 @@
         e.preventDefault();
         const empId = this.getAttribute("data-id");
 
-        const baseUrl = "{{ url_for('hr_admin.edit_employee', employee_id=0) }}";  
+        const baseUrl =
+          "{{ url_for('hr_admin.edit_employee', employee_id=0) }}";
         const url = baseUrl.replace("0", empId);
 
         fetch(url, {
