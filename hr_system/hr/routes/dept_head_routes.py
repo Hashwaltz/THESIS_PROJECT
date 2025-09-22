@@ -95,8 +95,6 @@ def employees():
         employees=employees,
         search=search
     )
-
-
 @dept_head_bp.route('/attendance')
 @login_required
 @dept_head_required
@@ -128,7 +126,7 @@ def attendance():
     attendances = query.order_by(Attendance.date.desc()).paginate(page=page, per_page=10, error_out=False)
 
     return render_template(
-        "dept_head/attendance.html",
+        "hr/dept_head/attendance.html",
         attendances=attendances,
         employees=employees,
         date_filter=date_filter,
