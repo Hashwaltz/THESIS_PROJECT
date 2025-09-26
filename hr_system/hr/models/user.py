@@ -1,4 +1,4 @@
-from . import db
+from main_app.extensions import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
 
@@ -51,3 +51,21 @@ class User(UserMixin, db.Model):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+        # ---------------------------
+    # ROLE CHECK HELPERS
+    # ---------------------------
+    def is_admin(self):
+        return self.role == "admin"
+
+    def is_staff(self):
+        return self.role == "staff"
+
+    def is_employee(self):
+        return self.role == "employee"
+
+    def is_officer(self):
+        return self.role == "officer"
+
+    def is_department_head(self):
+        return self.role == "dept_head"

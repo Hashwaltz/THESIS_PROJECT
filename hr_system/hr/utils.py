@@ -39,6 +39,15 @@ def dept_head_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def employee_required(f):
+    """Decorator to require employee role"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'employee':
+            return jsonify({'error': 'Employee access required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
 # ------------------------
 # Date & Leave Utilities
 # ------------------------
@@ -118,6 +127,66 @@ def get_attendance_summary(employee_id, start_date, end_date):
         'late': len([a for a in attendances if a.status == 'Late']),
         'half_day': len([a for a in attendances if a.status == 'Half Day'])
     }
+
+def get_attendance_chart_data(employee_id=None, start_date=None, end_date=None):
+    """
+    Get attendance data for charts.
+    Returns dict with:
+    - dates: list of dates in range
+    - present, absent, late, half_day: counts per day
+    """
+    from .models.hr_models import Attendance
+    from datetime import timedelta
+
+    if not start_date or not end_date:
+        return {
+            'dates': [],
+            'present': [],
+            'absent': [],
+            'late': [],
+            'half_day': []
+        }
+
+    # Get all attendance records in the range
+    query = Attendance.query.filter(
+        Attendance.date >= start_date,
+        Attendance.date <= end_date
+    )
+    if employee_id:
+        query = query.filter(Attendance.employee_id == employee_id)
+
+    attendances = query.all()
+
+    # Build a dictionary keyed by date for faster lookup
+    attendance_by_date = {a.date: a.status for a in attendances}
+
+    # Prepare chart arrays
+    dates = []
+    present_arr = []
+    absent_arr = []
+    late_arr = []
+    half_day_arr = []
+
+    current_date = start_date
+    while current_date <= end_date:
+        dates.append(current_date.strftime("%Y-%m-%d"))
+        status = attendance_by_date.get(current_date, "Absent")  # Default to Absent if no record
+
+        present_arr.append(1 if status == "Present" else 0)
+        absent_arr.append(1 if status == "Absent" else 0)
+        late_arr.append(1 if status == "Late" else 0)
+        half_day_arr.append(1 if status == "Half Day" else 0)
+
+        current_date += timedelta(days=1)
+
+    return {
+        'dates': dates,
+        'present': present_arr,
+        'absent': absent_arr,
+        'late': late_arr,
+        'half_day': half_day_arr
+    }
+
 
 
 def get_department_attendance_summary(department_id, start_date, end_date):

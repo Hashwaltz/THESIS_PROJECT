@@ -1,26 +1,23 @@
+# __init__.py
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-from hr_system.config import Config
 
-# Extensions
-db = SQLAlchemy()
-login_manager = LoginManager()
-migrate = Migrate()
+from hr_system.config import Config
+from main_app.extensions import db, login_manager, migrate
+
 
 def create_app():
     app = Flask(
         __name__,
         static_folder="static",
         template_folder="templates",
-        instance_path=Config.INSTANCE_PATH,   # ✅ force to use Thesis/instance
-        instance_relative_config=False        # ✅ stop auto-creating hr_system/instance
+        instance_path=os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'instance')
     )
 
-
     app.config.from_object(Config)
-
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["DEBUG"] = True
 
@@ -51,6 +48,7 @@ def create_app():
     from hr_system.hr.models import user, hr_models
 
     return app
+
 
 # Flask-Login user loader
 from hr_system.hr.models.user import User

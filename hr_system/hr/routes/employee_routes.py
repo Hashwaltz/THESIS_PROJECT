@@ -4,13 +4,16 @@ from datetime import datetime, date
 from ..models.user import User
 from ..models.hr_models import Employee, Attendance, Leave
 from ..forms import LeaveForm
-from ..utils import get_attendance_summary, get_leave_balance, get_current_month_range
+from ..utils import get_attendance_summary, get_leave_balance, get_current_month_range, employee_required, get_attendance_chart_data
 from .. import db
 
-employee_bp = Blueprint('employee', __name__)
+employee_bp = Blueprint('employee', __name__,
+    template_folder='../templates',
+    static_folder='../static')
 
 @employee_bp.route('/dashboard')
 @login_required
+@employee_required
 def dashboard():
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:
@@ -18,7 +21,12 @@ def dashboard():
         return redirect(url_for('auth.logout'))
 
     start_date, end_date = get_current_month_range()
-    attendance_summary = get_attendance_summary(employee.id, start_date, end_date)
+    
+    # For totals summary (like your info boxes)
+    attendance_summary_totals = get_attendance_summary(employee.id, start_date, end_date)
+    
+    # For chart
+    attendance_summary_chart = get_attendance_chart_data(employee.id, start_date, end_date)
 
     recent_leaves = Leave.query.filter_by(employee_id=employee.id)\
                                .order_by(Leave.created_at.desc()).limit(5).all()
@@ -27,15 +35,17 @@ def dashboard():
                       ['Sick', 'Vacation', 'Personal', 'Emergency', 'Maternity', 'Paternity']}
 
     return render_template(
-        'hr/employee_dashboard.html',
+        'hr/employee/employee_dashboard.html',
         employee=employee,
-        attendance_summary=attendance_summary,
+        attendance_summary=attendance_summary_totals,
         recent_leaves=recent_leaves,
-        leave_balances=leave_balances
+        leave_balances=leave_balances,
+        attendance_chart=attendance_summary_chart  # pass chart data separately
     )
 
 @employee_bp.route('/profile')
 @login_required
+@employee_required
 def profile():
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:
@@ -46,29 +56,51 @@ def profile():
 
 @employee_bp.route('/attendance')
 @login_required
+@employee_required
 def attendance():
+    # Get the employee record
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
         return redirect(url_for('auth.logout'))
 
+    # Pagination and filtering
     page = request.args.get('page', 1, type=int)
     date_filter = request.args.get('date', '')
 
     query = Attendance.query.filter_by(employee_id=employee.id)
     if date_filter:
-        query = query.filter_by(date=datetime.strptime(date_filter, '%Y-%m-%d').date())
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter_by(date=filter_date)
+        except ValueError:
+            flash('Invalid date format. Use YYYY-MM-DD.', 'error')
 
     attendances = query.order_by(Attendance.date.desc())\
                        .paginate(page=page, per_page=20, error_out=False)
 
-    return render_template('hr/employee_attendance.html',
-                           attendances=attendances,
-                           employee=employee,
-                           date_filter=date_filter)
+    # Optional: summarize attendance for display
+    summary = {
+        'present': sum(1 for a in attendances.items if a.status == 'Present'),
+        'absent': sum(1 for a in attendances.items if a.status == 'Absent'),
+        'late': sum(1 for a in attendances.items if a.status == 'Late'),
+        'half_day': sum(1 for a in attendances.items if a.status == 'Half Day')
+    }
+
+    return render_template(
+        'hr/employee/employee_attendance.html',
+        attendances=attendances,
+        employee=employee,
+        date_filter=date_filter,
+        summary=summary
+    )
+
+
+
 
 @employee_bp.route('/leaves')
 @login_required
+@employee_required
 def leaves():
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:
@@ -95,6 +127,7 @@ def leaves():
 
 @employee_bp.route('/leaves/request', methods=['GET', 'POST'])
 @login_required
+@employee_required
 def request_leave():
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:
@@ -143,6 +176,7 @@ def request_leave():
 
 @employee_bp.route('/leaves/<int:leave_id>')
 @login_required
+@employee_required
 def view_leave(leave_id):
     employee = Employee.query.filter_by(email=current_user.email).first()
     if not employee:

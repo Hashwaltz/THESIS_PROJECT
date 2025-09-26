@@ -10,10 +10,16 @@ from datetime import timedelta, datetime
 from sqlalchemy.orm import joinedload
 from collections import defaultdict
 from hr_system.hr.functions import parse_date
+import os
 
+hr_admin_bp = Blueprint(
+    'hr_admin',
+    __name__,
+    template_folder=os.path.join(os.path.dirname(__file__), '../templates/hr/admin'),
+    static_folder=os.path.join(os.path.dirname(__file__), '../static'),
+    static_url_path='/hr/static'
+)
 
-
-hr_admin_bp = Blueprint('hr_admin', __name__)
 
 
 # ------------------------- Dashboard -------------------------
@@ -531,22 +537,60 @@ def edit_department(department_id):
     )
 
 
-
-
-
-
-
-# ------------------------- Users -------------------------
-@hr_admin_bp.route('/users')
-@login_required
-@admin_required
-def users():
-    users = User.query.all()
-    return render_template('hr/users.html', users=users)
-
 # ------------------------- Reports -------------------------
 @hr_admin_bp.route('/reports')
 @login_required
 @admin_required
 def reports():
-    return render_template('hr/reports.html')
+    # Get filters from query parameters
+    report_type = request.args.get('report_type', 'attendance')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    page = request.args.get('page', 1, type=int)
+
+    # Convert dates to datetime objects if provided
+    try:
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+    except ValueError:
+        flash("Invalid date format", "error")
+        start_date_obj = end_date_obj = None
+
+    # Fetch data based on report type
+    if report_type == 'attendance':
+        query = Attendance.query
+        if start_date_obj:
+            query = query.filter(Attendance.date >= start_date_obj)
+        if end_date_obj:
+            query = query.filter(Attendance.date <= end_date_obj)
+        data = query.order_by(Attendance.date.desc()).paginate(page=page, per_page=20)
+
+        employees = Employee.query.filter_by(active=True).all()  # for filter dropdown
+
+    elif report_type == 'leaves':
+        query = Leave.query
+        if start_date_obj:
+            query = query.filter(Leave.start_date >= start_date_obj)
+        if end_date_obj:
+            query = query.filter(Leave.end_date <= end_date_obj)
+        data = query.order_by(Leave.start_date.desc()).paginate(page=page, per_page=20)
+        employees = Employee.query.filter_by(active=True).all()
+
+    elif report_type == 'payroll':
+        # Example payroll: just employees with salary (you can expand later)
+        query = Employee.query.filter(Employee.salary != None)
+        data = query.paginate(page=page, per_page=20)
+        employees = None
+
+    else:
+        flash("Invalid report type", "error")
+        return redirect(url_for('hr_admin.reports'))
+
+    return render_template(
+        'hr/admin/admin_reports.html',
+        data=data,
+        report_type=report_type,
+        start_date=start_date or '',
+        end_date=end_date or '',
+        employees=employees if report_type in ['attendance', 'leaves'] else []
+    )

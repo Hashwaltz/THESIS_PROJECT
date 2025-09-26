@@ -1,26 +1,61 @@
 from datetime import datetime, date, timedelta
 from functools import wraps
-from flask import current_app, request, jsonify
+from flask import current_app, request, jsonify, abort
 from flask_login import current_user
 import requests
+from ..payroll.models.user import PayrollUser
+from . import db
 
+HR_API_URL = "http://localhost:5000/api"  # 🔑 Change to your HR system URL
+def get_user_from_hr(hr_user_id):
+    """Fetch HR user data and create PayrollUser if not exists."""
+    try:
+        response = requests.get(f"{HR_API_URL}/users/{hr_user_id}")
+        if response.status_code != 200:
+            return None
+
+        data = response.json().get("data")
+        if not data:
+            return None
+
+        user = PayrollUser.query.filter_by(email=data['email']).first()
+        if not user:
+            user = PayrollUser(
+                email=data['email'],
+                first_name=data['first_name'],
+                last_name=data['last_name'],
+                role=data['role']
+            )
+            db.session.add(user)
+            db.session.commit()
+        return user
+
+    except Exception as e:
+        print("Error in get_user_from_hr:", e)
+        return None
+
+# ================
+# Role Decorators
+# ================
 def admin_required(f):
-    """Decorator to require admin role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
+        if not current_user.is_authenticated or not current_user.is_admin():
+            abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
 
 def staff_required(f):
-    """Decorator to require staff role or higher"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role not in ['admin', 'staff']:
-            return jsonify({'error': 'Staff access required'}), 403
+        if not current_user.is_authenticated or not current_user.is_staff():
+            abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
+
+
 
 def calculate_sss_contribution(basic_salary):
     """Calculate SSS contribution based on salary"""

@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from payroll.models.user import PayrollUser
-from payroll.models.payroll_models import Employee, Payroll, Payslip
-from payroll.forms import PayslipSearchForm
-from payroll import db
+from payroll_system.payroll.models.user import PayrollUser
+from payroll_system.payroll.models.payroll_models import Employee, Payroll, Payslip
+from payroll_system.payroll.forms import PayslipSearchForm
+from payroll_system.payroll import db
 from datetime import datetime, date
 
 payroll_employee_bp = Blueprint('payroll_employee', __name__)

@@ -1,22 +1,69 @@
 {
     "version": "0.2.0",
     "configurations": [
-        
-
         {
-            "name": "Flask: hr_system.run",
-            "type": "debugpy", // <-- updated here
+            "name": "Flask: Main App",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "main_app.run:app",
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            },
+            "args": [
+                "run",
+                "--host=0.0.0.0",
+                "--port=5000",
+                "--reload"
+            ],
+            "jinja": true
+        },
+        {
+            "name": "Flask: HR System",
+            "type": "debugpy",
             "request": "launch",
             "module": "flask",
             "env": {
                 "FLASK_APP": "hr_system.run:app",
-                "FLASK_ENV": "development"
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
             },
             "args": [
                 "run",
-                "--host=0.0.0.0"
+                "--host=0.0.0.0",
+                "--port=5001",
+                "--reload"
             ],
             "jinja": true
+        },
+        {
+            "name": "Flask: Payroll System",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "payroll_system.run:app",
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            },
+            "args": [
+                "run",
+                "--host=0.0.0.0",
+                "--port=5002",
+                "--reload"
+            ],
+            "jinja": true
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch All Apps",
+            "configurations": [
+                "Flask: Main App",
+                "Flask: HR System",
+                "Flask: Payroll System"
+            ]
         }
     ]
 }

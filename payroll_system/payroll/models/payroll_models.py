@@ -1,33 +1,11 @@
-from payroll import db
-from datetime import datetime, date
+# payroll_models.py
+from main_app.extensions import db
+from hr_system.hr.models.hr_models import Employee  # Use HR's Employee
+from datetime import datetime
 
-class Employee(db.Model):
-    """Employee model synced from HR system"""
-    id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.String(20), unique=True, nullable=False)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
-    middle_name = db.Column(db.String(100))
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    phone = db.Column(db.String(20))
-    department = db.Column(db.String(100), nullable=False)
-    position = db.Column(db.String(100), nullable=False)
-    basic_salary = db.Column(db.Float, nullable=False)
-    date_hired = db.Column(db.Date, nullable=False)
-    active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    payrolls = db.relationship('Payroll', backref='employee', lazy=True)
-    payslips = db.relationship('Payslip', backref='employee', lazy=True)
-    
-    def __repr__(self):
-        return f'<Employee {self.employee_id}: {self.first_name} {self.last_name}>'
-    
-    def get_full_name(self):
-        return f"{self.first_name} {self.middle_name} {self.last_name}".strip()
-
+# -------------------------
+# Payroll tables
+# -------------------------
 class Payroll(db.Model):
     """Payroll period and calculations"""
     id = db.Column(db.Integer, primary_key=True)
@@ -51,8 +29,12 @@ class Payroll(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationship to Employee
+    employee = db.relationship('Employee', backref='payrolls', lazy=True)
+
     def __repr__(self):
         return f'<Payroll {self.employee_id} - {self.pay_period_start} to {self.pay_period_end}>'
+
 
 class Payslip(db.Model):
     """Generated payslips"""
@@ -76,14 +58,18 @@ class Payslip(db.Model):
     total_deductions = db.Column(db.Float, default=0)
     net_pay = db.Column(db.Float, nullable=False)
     generated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    generated_by = db.Column(db.Integer, db.ForeignKey('payroll_user.id'))
+    
+    # Instead of FK to PayrollUser (proxy), store HR user ID
+    generated_by = db.Column(db.Integer, nullable=True)
+
     status = db.Column(db.String(50), default="Generated")  # Generated, Sent, Downloaded
     
     # Relationships
-    generator = db.relationship('PayrollUser', backref='generated_payslips')
-    
+    payroll = db.relationship('Payroll', backref='payslips', lazy=True)
+
     def __repr__(self):
         return f'<Payslip {self.payslip_number}>'
+
 
 class Deduction(db.Model):
     """Deduction types and rates"""
@@ -100,6 +86,7 @@ class Deduction(db.Model):
     def __repr__(self):
         return f'<Deduction {self.name}>'
 
+
 class Allowance(db.Model):
     """Allowance types and amounts"""
     id = db.Column(db.Integer, primary_key=True)
@@ -114,6 +101,7 @@ class Allowance(db.Model):
     def __repr__(self):
         return f'<Allowance {self.name}>'
 
+
 class Tax(db.Model):
     """Tax brackets and rates"""
     id = db.Column(db.Integer, primary_key=True)
@@ -127,6 +115,7 @@ class Tax(db.Model):
     def __repr__(self):
         return f'<Tax {self.min_income} - {self.max_income}>'
 
+
 class PayrollPeriod(db.Model):
     """Payroll periods (bi-monthly)"""
     id = db.Column(db.Integer, primary_key=True)
@@ -139,5 +128,3 @@ class PayrollPeriod(db.Model):
     
     def __repr__(self):
         return f'<PayrollPeriod {self.period_name}>'
-
-

@@ -1,12 +1,41 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
-from payroll.models.user import PayrollUser
-from payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod
-from payroll.utils import admin_required, staff_required, sync_employee_from_hr, sync_all_employees_from_hr
-from payroll import db
+from payroll_system.payroll.models.user import PayrollUser
+from payroll_system.payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod
+from payroll_system.payroll.utils import admin_required, staff_required, sync_employee_from_hr, sync_all_employees_from_hr
+from payroll_system.payroll import db
 from datetime import datetime, date
+from flask_login import UserMixin
 
 payroll_api_bp = Blueprint('payroll_api', __name__)
+
+
+class PayrollUser(UserMixin):
+    """Proxy user loaded from HR system. Payroll DB does not store accounts."""
+
+    def __init__(self, id, email, first_name, last_name, role, active=True, department=None, position=None):
+        self.id = id
+        self.email = email
+        self.first_name = first_name
+        self.last_name = last_name
+        self.role = role
+        self.active = active
+        self.department = department
+        self.position = position
+
+    def __repr__(self):
+        return f'<PayrollUser {self.email}>'
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def is_admin(self):
+        return self.role == "admin"
+
+    def is_staff(self):
+        return self.role in ["staff", "admin"]
+    
+
 
 @payroll_api_bp.route('/employees')
 @login_required

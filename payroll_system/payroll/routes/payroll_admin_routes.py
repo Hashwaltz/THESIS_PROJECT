@@ -1,39 +1,43 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from payroll.models.user import PayrollUser
-from payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod, Deduction, Allowance, Tax
-from payroll.forms import PayrollPeriodForm, PayrollForm, PayslipForm, DeductionForm, AllowanceForm, TaxForm, PayrollSummaryForm
-from payroll.utils import admin_required, calculate_payroll_summary, get_current_payroll_period, create_payroll_period, process_payroll_for_employee, sync_all_employees_from_hr
-from payroll import db
+from payroll_system.payroll.models.user import PayrollUser
+from payroll_system.payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod, Deduction, Allowance, Tax
+from payroll_system.payroll.forms import PayrollPeriodForm, PayrollForm, PayslipForm, DeductionForm, AllowanceForm, TaxForm, PayrollSummaryForm
+from payroll_system.payroll.utils import admin_required, calculate_payroll_summary, get_current_payroll_period, create_payroll_period, process_payroll_for_employee, sync_all_employees_from_hr
+from payroll_system.payroll import db
+from hr_system.hr.models.user import User
+from hr_system.hr.models.hr_models import Department, Employee
 from datetime import datetime, date
 
-payroll_admin_bp = Blueprint('payroll_admin', __name__)
+payroll_admin_bp = Blueprint(
+    "payroll_admin",
+    __name__,
+    template_folder="../templates/admin",
+    static_folder="../static"
+)
 
 @payroll_admin_bp.route('/dashboard')
 @login_required
 @admin_required
 def dashboard():
-    # Get statistics
-    total_employees = Employee.query.filter_by(active=True).count()
-    total_payrolls = Payroll.query.count()
-    total_payslips = Payslip.query.count()
-    
-    # Get current payroll period
-    current_period = get_current_payroll_period()
-    
-    # Get recent payrolls
-    recent_payrolls = Payroll.query.order_by(Payroll.created_at.desc()).limit(5).all()
-    
-    # Get recent payslips
-    recent_payslips = Payslip.query.order_by(Payslip.generated_at.desc()).limit(5).all()
-    
-    return render_template('payroll/admin_dashboard.html',
-                         total_employees=total_employees,
-                         total_payrolls=total_payrolls,
-                         total_payslips=total_payslips,
-                         current_period=current_period,
-                         recent_payrolls=recent_payrolls,
-                         recent_payslips=recent_payslips)
+    if current_user.role.lower() != "admin":
+        # Prevent non-admins from accessing
+        return render_template("errors/403.html"), 403
+
+    # Queries
+    total_employees = User.query.filter(User.role == "employee").count()
+    total_departments = Department.query.count()
+    total_active_users = User.query.filter_by(active=True).count()
+    total_inactive_users = User.query.filter_by(active=False).count()
+
+    # Pass data into template
+    return render_template(
+        "payroll/admin/admin_dashboard.html",
+        total_employees=total_employees,
+        total_departments=total_departments,
+        total_active_users=total_active_users,
+        total_inactive_users=total_inactive_users
+    )
 
 @payroll_admin_bp.route('/employees')
 @login_required

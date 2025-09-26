@@ -20,25 +20,21 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style2.css') }}"
+      href="{{ url_for('dept_head.static', filename='css/style2.css') }}"
     />
     <link 
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/forms.css') }}"
+      href="{{ url_for('dept_head.static', filename='css/forms.css') }}"
     />  
 
     <link
       rel="icon"
       type="image/png"
-      href="{{ url_for('static', filename='img/favicon.avif') }}"
+      href="{{ url_for('dept_head.static', filename='img/favicon.avif') }}"
     />
     <script>
       window.console = window.console || function (t) {};
     </script>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style2.css') }}"
-    />
   </head>
   <body>
     <div class="dashboard">
@@ -46,7 +42,7 @@
         <div class="search" style="display: flex; align-items: center; gap: 10px;">
           <label>
           <img
-              src="{{ url_for('static', filename='img/logo2.avif') }}"
+              src="{{ url_for('dept_head.static', filename='img/logo2.avif') }}"
               alt="Logo"
               width="60"
               height="60"
@@ -92,7 +88,7 @@
         <figure class="user">
           <div class="user-avatar">
             <img
-              src="{{ url_for('static', filename='images/user/user_logo.webp') }}"
+              src="{{ url_for('dept_head.static', filename='images/user/user_logo.webp') }}"
               alt="User Profile"
             />
           </div>

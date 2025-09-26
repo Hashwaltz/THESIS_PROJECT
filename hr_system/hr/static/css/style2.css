@@ -136,7 +136,7 @@ html {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   padding: 0;
 }
-}
+
 
 .content-wrap .person-boxes .person-box {
   background: #fff;
@@ -828,7 +828,7 @@ html {
   flex-direction: row;
   gap: 20px;
   margin: 4px 0;
-  width: calc(100% / 3 - 30px);
+  width: calc(100% / 2 - 10px);
 }
 
 .searching .input-field input,
@@ -870,5 +870,32 @@ html {
 
 
 .searching  button:hover {
+  background-color: #265df2;
+}
+
+.printing {
+  background-color: #4070f4;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 45px;
+  max-width: 200px;
+  outline: none;
+  transition: all 0.3s linear;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 400;
+  margin-top: 8px;
+}
+.printing a{
+  
+  color: #fff;
+  text-decoration: none;
+}
+
+.printing button:hover {
   background-color: #265df2;
 }

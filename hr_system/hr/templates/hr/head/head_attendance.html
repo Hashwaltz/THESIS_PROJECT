@@ -1,5 +1,5 @@
-{% extends 'dept_head/dept_base.html' %}
-{% block title %}Department Head - Attendance Records{% endblock %}
+{% extends 'hr/employee/employee_base.html' %} 
+{% block title %}Employee - Attendance Records{% endblock %}
 
 {% block content %}
 <main class="content-wrap">
@@ -7,26 +7,33 @@
     <h1>Attendance Records</h1>
   </header>
 
+  <!-- Optional Summary Box -->
+  <div class="info-boxes">
+    <div class="info-box">
+      <span class="big">{{ summary.present }}</span>
+      Present
+    </div>
+    <div class="info-box">
+      <span class="big">{{ summary.absent }}</span>
+      Absent
+    </div>
+    <div class="info-box">
+      <span class="big">{{ summary.late }}</span>
+      Late
+    </div>
+    <div class="info-box">
+      <span class="big">{{ summary.half_day }}</span>
+      Half Day
+    </div>
+  </div>
+
   <!-- Filter Form -->
   <div class="search-box">
     <form method="get" class="filter-form">
       <div class="fields">
-
         <div class="input-field">
           <label>Date</label>
           <input type="date" id="date" name="date" value="{{ date_filter }}">
-        </div>
-
-        <div class="input-field">
-          <label>Employee</label>
-          <select id="employee" name="employee">
-            <option value="">All</option>
-            {% for emp in employees %}
-              <option value="{{ emp.id }}" {% if employee_filter == emp.id|string %}selected{% endif %}>
-                {{ emp.get_full_name() }}
-              </option>
-            {% endfor %}
-          </select>
         </div>
 
         <div class="input-field">
@@ -36,54 +43,54 @@
             <i class="uil uil-filter"></i>
           </button>
         </div>
-
       </div>
     </form>
   </div>
 
   <!-- Attendance Table -->
   <div class="table-container">
-    <div class="centered-container">
-      <table class="responsive-table">
-        <caption><b>Attendance List</b></caption>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Employee</th>
-            <th>Time In</th>
-            <th>Time Out</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for att in attendances.items %}
-          <tr>
-            <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
-            <td data-label="Employee">{{ att.employee.get_full_name() }}</td>
-            <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
-            <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
-            <td data-label="Status">{{ att.status }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="5">No attendance records found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <table class="responsive-table">
+      <caption><b>Attendance List</b></caption>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att in attendances.items %}
+        <tr>
+          <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
+          <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
+          <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
+          <td data-label="Status" style="color: 
+              {% if att.status == 'Present' %}green
+              {% elif att.status == 'Late' %}orange
+              {% else %}red{% endif %};">
+            {{ att.status }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-      <!-- Pagination -->
-      <div class="pagination">
-        {% if attendances.has_prev %}
-          <a href="{{ url_for('dept_head.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}">Previous</a>
-        {% endif %}
+    <!-- Pagination -->
+    <div class="pagination">
+      {% if attendances.has_prev %}
+        <a href="{{ url_for('employee.attendance', page=attendances.prev_num, date=date_filter) }}">Previous</a>
+      {% endif %}
 
-        Page {{ attendances.page }} of {{ attendances.pages }}
+      Page {{ attendances.page }} of {{ attendances.pages }}
 
-        {% if attendances.has_next %}
-          <a href="{{ url_for('dept_head.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}">Next</a>
-        {% endif %}
-      </div>
+      {% if attendances.has_next %}
+        <a href="{{ url_for('employee.attendance', page=attendances.next_num, date=date_filter) }}">Next</a>
+      {% endif %}
     </div>
   </div>
 </main>

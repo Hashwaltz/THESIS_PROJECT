@@ -1,4 +1,4 @@
-from payroll import create_app, db
+from payroll_system.payroll import create_app, db
 
 app = create_app()
 

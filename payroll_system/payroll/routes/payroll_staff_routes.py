@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from payroll.models.user import PayrollUser
-from payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod
-from payroll.forms import PayslipForm, PayrollSummaryForm
-from payroll.utils import staff_required, calculate_payroll_summary, get_current_payroll_period
-from payroll import db
+from payroll_system.payroll.models.user import PayrollUser
+from payroll_system.payroll.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod
+from payroll_system.payroll.forms import PayslipForm, PayrollSummaryForm
+from payroll_system.payroll.utils import staff_required, calculate_payroll_summary, get_current_payroll_period
+from payroll_system.payroll import db
 from datetime import datetime, date
 
 payroll_staff_bp = Blueprint('payroll_staff', __name__)

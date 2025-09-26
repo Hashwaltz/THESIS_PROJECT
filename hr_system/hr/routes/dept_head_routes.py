@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from flask_login import login_required, current_user
 from datetime import datetime
 from ..models.user import User
@@ -6,9 +6,11 @@ from ..models.hr_models import Employee, Attendance, Leave, Department
 from ..forms import AttendanceForm, LeaveForm
 from ..utils import dept_head_required, get_attendance_summary, get_current_month_range,get_department_attendance_summary
 from .. import db
+import csv
 
-
-dept_head_bp = Blueprint('dept_head', __name__)
+dept_head_bp = Blueprint('dept_head', __name__,
+                          template_folder='../templates',
+                          static_folder='../static')
 
 @dept_head_bp.route('/dashboard')
 @login_required
@@ -95,43 +97,128 @@ def employees():
         employees=employees,
         search=search
     )
+
+
+@dept_head_bp.route('/employees/export')
+@login_required
+@dept_head_required
+def export_employees():
+    dept_id = current_user.department_id
+    employees = Employee.query.filter_by(department_id=dept_id, active=True).all()
+
+    def generate():
+        data = [['Employee ID', 'First Name', 'Last Name', 'Email', 'Department', 'Status']]
+        for emp in employees:
+            data.append([
+                emp.employee_id,
+                emp.first_name,
+                emp.last_name,
+                emp.email or '',
+                emp.department.name if emp.department else '',
+                'Active' if emp.active else 'Inactive'
+            ])
+        output = []
+        for row in data:
+            output.append(','.join(row))
+        return '\n'.join(output)
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=employees_report.csv"}
+    )
+
+
+
 @dept_head_bp.route('/attendance')
 @login_required
 @dept_head_required
 def attendance():
     page = request.args.get('page', 1, type=int)
-    date_filter = request.args.get('date', '')
-    employee_filter = request.args.get('employee', '')
+    date_filter = request.args.get('date')
+    employee_filter = request.args.get('employee')
 
-    # Department restriction
-    dept_id = current_user.department_id
+    dept_id = current_user.department_id  # Dept Head's department
 
-    # Get employees in department
-    employees = Employee.query.filter_by(department_id=dept_id).all()
+    # Employees in this department
+    employees = Employee.query.filter_by(department_id=dept_id, active=True).all()
 
-    # Base query (attendance only from this department)
+    # Attendance base query
     query = Attendance.query.join(Employee).filter(Employee.department_id == dept_id)
 
-    # Apply filters
     if date_filter:
-        try:
-            date_obj = datetime.strptime(date_filter, "%Y-%m-%d").date()
-            query = query.filter(Attendance.date == date_obj)
-        except ValueError:
-            pass  # ignore invalid date
-
+        query = query.filter(Attendance.date == date_filter)
     if employee_filter:
-        query = query.filter(Attendance.employee_id == int(employee_filter))
+        query = query.filter(Attendance.employee_id == employee_filter)
 
     attendances = query.order_by(Attendance.date.desc()).paginate(page=page, per_page=10, error_out=False)
 
+    # --- Absentees ---
+    absentees = []
+    if date_filter:
+        attended_ids = [att.employee_id for att in query.all()]
+        absentees = Employee.query.filter(
+            Employee.department_id == dept_id,
+            Employee.active == True,
+            ~Employee.id.in_(attended_ids)
+        ).all()
+
+    # --- Late arrivals ---
+    # Example: assume shift starts at 9:00
+    shift_start = datetime.strptime("09:00", "%H:%M").time()
+    late_arrivals = []
+    if date_filter:
+        late_arrivals = Attendance.query.join(Employee).filter(
+            Employee.department_id == dept_id,
+            Attendance.date == date_filter,
+            Attendance.time_in > shift_start
+        ).all()
+
     return render_template(
-        "hr/dept_head/attendance.html",
+        'hr/head/head_attendance.html',
         attendances=attendances,
         employees=employees,
+        absentees=absentees,
+        late_arrivals=late_arrivals,
         date_filter=date_filter,
         employee_filter=employee_filter
     )
+
+
+# --- Export Route ---
+import csv
+from flask import Response
+
+@dept_head_bp.route('/attendance/export')
+@login_required
+@dept_head_required
+def export_attendance():
+    dept_id = current_user.department_id
+    date_filter = request.args.get('date')
+
+    query = Attendance.query.join(Employee).filter(Employee.department_id == dept_id)
+    if date_filter:
+        query = query.filter(Attendance.date == date_filter)
+
+    records = query.all()
+
+    def generate():
+        data = [['Date', 'Employee', 'Time In', 'Time Out', 'Status']]
+        for att in records:
+            data.append([
+                att.date.strftime('%Y-%m-%d'),
+                att.employee.get_full_name(),
+                att.time_in.strftime('%H:%M') if att.time_in else '',
+                att.time_out.strftime('%H:%M') if att.time_out else '',
+                att.status
+            ])
+        output = []
+        for row in data:
+            output.append(','.join(row))
+        return '\n'.join(output)
+
+    return Response(generate(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment;filename=attendance_report.csv"})
 
 
 @dept_head_bp.route('/attendance/add', methods=['GET', 'POST'])

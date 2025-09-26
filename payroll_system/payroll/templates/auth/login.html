@@ -1,59 +1,75 @@
-{% extends "base.html" %}
+{% extends "auth/base.html" %}
 
-{% block title %}Login - Payroll System{% endblock %}
+{% block title %}Login-Payroll{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <i class="fas fa-calculator fa-3x text-success mb-3"></i>
-                    <h3>Payroll System Login</h3>
-                    <p class="text-muted">Sign in to your account</p>
-                </div>
 
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
 
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.password.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-success btn-lg") }}
-                    </div>
-                </form>
-
-                <div class="text-center mt-3">
-                    <p class="mb-0">Don't have an account? 
-                        <a href="{{ url_for('payroll_auth.register') }}" class="text-decoration-none">Register here</a>
-                    </p>
-                </div>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="logo-placeholder">
+                <!-- Replace the src with your logo path later -->
+                <img src="{{ url_for('payroll_auth.static', filename='img/logo2.avif') }}" alt="Logo" width="150" height="150" class="rounded-logo">
             </div>
+            <h2>Sign In</h2>
+            <p>Enter your credentials to continue</p>
+        </div>
+        
+        <!-- 🔹 Flask-WTF handles CSRF automatically -->
+        <form class="login-form" id="loginForm" method="POST" action="{{ url_for('payroll_auth.login') }}">
+            {{ form.hidden_tag() }}
+
+            <!-- Email -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    {{ form.email(class="form-control", id="email", required=True, autocomplete="email") }}
+                    <label for="email">Email</label>
+                </div>
+                {% if form.email.errors %}
+                    <span class="error-message">{{ form.email.errors[0] }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    {{ form.password(class="form-control", id="password", required=True, autocomplete="current-password") }}
+                    <label for="password">Password</label>
+                    
+                    <button type="button" class="password-toggle" id="passwordToggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+                        <span class="toggle-icon">👁</span>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <span class="error-message">{{ form.password.errors[0] }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Remember me -->
+            <div class="form-options">
+                <div class="remember-wrapper">
+                    {{ form.remember() }}
+                    <label for="remember" class="checkbox-label">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                </div>
+                <a href="#" class="forgot-password">Forgot password?</a>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="login-btn">
+                <span class="btn-text">Sign In</span>
+                <span class="btn-loader"></span>
+            </button>
+        </form>
+
+        <div class="success-message" id="successMessage" style="display:none;">
+            <div class="success-icon">✓</div>
+            <h3>Welcome back!</h3>
+            <p>Redirecting to your dashboard...</p>
         </div>
     </div>
 </div>
 {% endblock %}
-
-

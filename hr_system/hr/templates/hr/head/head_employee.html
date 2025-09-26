@@ -15,7 +15,9 @@
                 <div class="fields">
                     <div class="input-field">
                         <input type="text" name="search" value="{{ search }}" placeholder="Search employees...">
-                        <button type="submit">Search</button>
+                        <button type="submit">Search</button>                
+                        <button class="printing "> <a href="{{ url_for('dept_head.export_employees') }}">Print</a></button>
+
                     </div>
                 </div>
             </form>
@@ -85,6 +87,53 @@
       </div>
     </div>
   </div>
+
+  {% if absentees %}
+<section class="person-boxes">
+  {% for emp in absentees %}
+  <div class="person-box">
+    <div class="box-avatar">
+      <img
+        src="{{ emp.photo if emp.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+        alt="{{ emp.get_full_name() }}"
+      />
+    </div>
+    <div class="box-bio">
+      <h2 class="bio-name">{{ emp.get_full_name() }}</h2>
+      <p class="bio-position">
+        {{ emp.position.name if emp.position else "No Position" }}
+      </p>
+      <p class="bio-status" style="color:red;">Absent</p>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if late_arrivals %}
+<section class="person-boxes">
+  {% for l in late_arrivals %}
+  <div class="person-box">
+    <div class="box-avatar">
+      <img
+        src="{{ l.employee.photo if l.employee.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+        alt="{{ l.employee.get_full_name() }}"
+      />
+    </div>
+    <div class="box-bio">
+      <h2 class="bio-name">{{ l.employee.get_full_name() }}</h2>
+      <p class="bio-position">
+        {{ l.employee.position.name if l.employee.position else "No Position" }}
+      </p>
+      <p class="bio-status" style="color:orange;">
+        Late - {{ l.time_in.strftime('%H:%M') }}
+      </p>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
 
 </main>
 

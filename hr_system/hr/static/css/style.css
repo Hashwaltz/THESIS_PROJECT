@@ -8,7 +8,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background: #dee2e6;
+    background: #e9ecef;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -386,5 +386,83 @@ body {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
+    }
+}
+
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #3b82f6; /* green similar to your login theme */
+    color: #fff;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 12px 0;
+}
+
+.navbar-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.25rem;
+    float: left;
+    text-decoration: none;
+}
+
+.nav-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 16px;
+}
+
+.nav-links li a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.nav-links li a:hover {
+    color: #d1fae5; /* lighter green on hover */
+}
+
+/* Add top padding to login container so it's not hidden behind navbar */
+.login-container {
+    padding-top: 80px; /* match navbar height */
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .navbar-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        gap: 8px;
     }
 }

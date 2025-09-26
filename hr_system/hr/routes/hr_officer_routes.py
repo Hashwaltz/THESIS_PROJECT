@@ -9,10 +9,9 @@ from .. import db
 from sqlalchemy.orm import joinedload
 
 
-hr_officer_bp = Blueprint('hr_officer', __name__)
-
-
-
+hr_officer_bp = Blueprint('hr_officer', __name__,
+                           template_folder='../templates',
+                           static_folder='../static')
 
 
 # --- OFFICER DASHBOARD ---

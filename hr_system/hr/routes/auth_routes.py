@@ -6,17 +6,29 @@ from .. import db
 from ..models.user import User
 from ..models.hr_models import Employee, Attendance
 from ..utils import admin_required
+import os
 
-auth_bp = Blueprint('auth', __name__)
+
+auth_bp = Blueprint(
+    'auth',
+    __name__,
+    template_folder=os.path.join(os.path.dirname(__file__), '../templates/auth'),
+    static_folder=os.path.join(os.path.dirname(__file__), '../static'),  # absolute path to HR static
+    static_url_path='/hr/static'  # URL prefix when accessed via main app
+)
+
+
 
 @auth_bp.route('/')
 def index():
+    
     return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        # Already logged in: redirect by role
         role = current_user.role.lower()
         if role == 'admin':
             return redirect(url_for('hr_admin.dashboard'))
@@ -24,15 +36,24 @@ def login():
             return redirect(url_for('hr_officer.hr_dashboard'))
         elif role == 'dept_head':
             return redirect(url_for('dept_head.dashboard'))
-        else:
+        elif role == 'employee':
             return redirect(url_for('employee.dashboard'))
-    
+
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data.strip()).first()
+        print("Form email:", form.email.data)
+        print("User fetched:", user)
+
+        if user:
+            print("User password in DB:", user.password)
+            print("Entered password:", form.password.data)
+        else:
+            flash('Invalid email or password.', 'error')
+            return render_template('auth/login.html', form=form)
 
         # Plain-text password check
-        if user and user.password == form.password.data:
+        if user.password.strip() == form.password.data.strip():
             if not user.active:
                 flash('Your account has been deactivated. Please contact administrator.', 'error')
                 return render_template('auth/login.html', form=form)
@@ -49,15 +70,18 @@ def login():
                 return redirect(url_for('hr_officer.hr_dashboard'))
             elif role == 'dept_head':
                 return redirect(url_for('dept_head.dashboard'))
-            else:
+            elif role == 'employee':
                 return redirect(url_for('employee.dashboard'))
+
         else:
             flash('Invalid email or password.', 'error')
 
-    return render_template('auth/login.html', form=form)
+    return render_template('login.html', form=form)
+
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    
     if current_user.is_authenticated:
         return redirect(url_for('hr_admin.dashboard'))
     
@@ -66,7 +90,7 @@ def register():
         existing_user = User.query.filter_by(email=form.email.data).first()
         if existing_user:
             flash('Email already registered.', 'error')
-            return render_template('auth/register.html', form=form)
+            return render_template('register.html', form=form)
         
         user = User(
             email=form.email.data,
@@ -87,7 +111,7 @@ def register():
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
     
-    return render_template('auth/register.html', form=form)
+    return render_template('register.html', form=form)
 
 
 @auth_bp.route('/logout')
@@ -101,7 +125,7 @@ def logout():
 @auth_bp.route('/profile')
 @login_required
 def profile():
-    return render_template('auth/profile.html', user=current_user)
+    return render_template('profile.html', user=current_user)
 
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
@@ -123,11 +147,11 @@ def change_password():
         
         if len(new_password) < 6:
             flash('New password must be at least 6 characters long.', 'error')
-            return render_template('auth/change_password.html')
+            return render_template('change_password.html')
         
         current_user.password = new_password
         db.session.commit()
         flash('Password changed successfully.', 'success')
         return redirect(url_for('auth.profile'))
     
-    return render_template('auth/change_password.html')
+    return render_template('change_password.html')
