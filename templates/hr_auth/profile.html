@@ -1,0 +1,96 @@
+{% extends "hr/admin/admin_base.html" %}
+{% block title %}HR Admin - Edit Profile{% endblock %}
+
+{% block content %}
+<!-- Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+/>
+
+<div class="content-wrap">
+  <center>
+    <div class="edit-container" style="max-width: 600px; width: 100%; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 30px;">
+      <header style="font-size: 1.8em; font-weight: 600; color: #4b84fe; margin-bottom: 20px;">User Details</header>
+      <form method="POST" action="{{ url_for('hr_admin.edit_password') }}" id="editProfileForm">
+
+        <div class="input-field">
+          <label>Email</label>
+          <input type="email" name="email" value="{{ user.email }}" readonly />
+        </div>
+
+        <div class="input-field">
+          <label>First Name</label>
+          <input type="text" name="first_name" value="{{ user.first_name }}" readonly />
+        </div>
+
+        <div class="input-field">
+          <label>Last Name</label>
+          <input type="text" name="last_name" value="{{ user.last_name }}" readonly />
+        </div>
+
+        <!-- ✅ Password Field (Optional) -->
+        <div class="input-field" style="position: relative;">
+          <label>Password</label>
+          <input 
+            type="password" 
+            name="password" 
+            id="password" 
+            placeholder="Enter new password (leave blank to keep current)"
+            style="padding-right: 40px;" 
+          />
+        </div>
+
+        <button type="button" class="submit" id="saveProfileBtn"
+          style="margin-top: 15px; background-color: #4070f4; color: #fff; padding: 12px 25px; border-radius: 5px; border: none; font-weight: 600; cursor: pointer;">
+          <span class="btnText">Update Password</span>
+        </button>
+
+      </form>
+    </div>
+  </center>
+</div>
+
+<!-- SweetAlert + Password Toggle Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const passwordField = document.getElementById("password");
+  const togglePassword = document.getElementById("togglePassword");
+  const saveBtn = document.getElementById("saveProfileBtn");
+  const form = document.getElementById("editProfileForm");
+
+  // Toggle password visibility with Font Awesome icon
+  togglePassword.addEventListener("click", function () {
+    const type = passwordField.type === "password" ? "text" : "password";
+    passwordField.type = type;
+
+    // Toggle icon between fa-eye and fa-eye-slash
+    this.classList.toggle("fa-eye");
+    this.classList.toggle("fa-eye-slash");
+  });
+
+  // SweetAlert confirmation before saving
+  saveBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    Swal.fire({
+      title: "Do you want to save the changes?",
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: "Save",
+      denyButtonText: `Don't save`,
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#4e73df",
+      denyButtonColor: "#e74a3b",
+      cancelButtonColor: "#858796",
+      customClass: { actions: 'swal2-actions-custom' }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit();
+      } else if (result.isDenied) {
+        Swal.fire("Changes are not saved", "", "info");
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -2,59 +2,89 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from datetime import datetime
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position
 from ..forms import AttendanceForm, LeaveForm
 from ..utils import dept_head_required, get_attendance_summary, get_current_month_range,get_department_attendance_summary
 from .. import db
 import csv
+import os
 
-dept_head_bp = Blueprint('dept_head', __name__,
-                          template_folder='../templates',
-                          static_folder='../static')
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "hr_static")
+
+dept_head_bp = Blueprint(
+    'dept_head',
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path='/hr/static'
+    )
+
 
 @dept_head_bp.route('/dashboard')
 @login_required
 @dept_head_required
 def dashboard():
-    # 1. Get employees in the department
-    department = Department.query.get(current_user.department_id)  # if user has dept_id
-    department_employees = Employee.query.filter_by(
-        department_id=current_user.department_id,
-        active=True
-    ).all()
+    """Department Head Dashboard"""
+
+    department = None
+    if current_user.department_id:
+        department = Department.query.get(current_user.department_id)
+    else:
+        department = Department.query.filter_by(head_id=current_user.id).first()
+
+    if not department:
+        # Pass empty placeholders so template does not break
+        return render_template(
+            'hr/head/head_dashboard.html',
+            not_assigned=True,
+            department=None,
+            total_employees=0,
+            recent_leaves=[],
+            attendance_summary={'total_present': 0, 'total_absent': 0, 'total_late': 0, 'dates': [], 'present_counts': [], 'absent_counts': [], 'late_counts': []}
+        )
+
+    # Update user's department_id if missing
+    if not current_user.department_id:
+        current_user.department_id = department.id
+        db.session.commit()
+
+    # Employees
+    department_employees = Employee.query.filter_by(department_id=department.id, active=True).all()
     total_employees = len(department_employees)
 
-    # 2. Get recent leave requests in department (last 5)
+    # Recent leaves
     recent_leaves = (
         Leave.query.join(Employee)
-        .filter(Employee.department_id == current_user.department_id)
+        .filter(Employee.department_id == department.id)
         .order_by(Leave.created_at.desc())
         .limit(5)
         .all()
     )
 
-    # 3. Attendance summary for this month
+    # Attendance summary
     start_date, end_date = get_current_month_range()
-    attendance_summary = get_department_attendance_summary(
-        current_user.department_id,
-        start_date,
-        end_date
-    )
+    attendance_summary = get_department_attendance_summary(department.id, start_date, end_date)
 
     return render_template(
         'hr/head/head_dashboard.html',
         department=department,
         total_employees=total_employees,
         recent_leaves=recent_leaves,
-        attendance_summary=attendance_summary
+        attendance_summary=attendance_summary,
+        not_assigned=False
     )
-
 
 @dept_head_bp.route('/employee/<int:employee_id>/edit')
 @login_required
 @dept_head_required
 def edit_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
+    positions = Position.query.all()
+    departments = Department.query.all()
+
 
     # Ensure dept head can only access employees in their department
     if employee.department_id != current_user.department_id:
@@ -63,9 +93,9 @@ def edit_employee(employee_id):
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         # Return partial template for modal
-        return render_template("hr/head/head_edit.html", employee=employee)
+        return render_template("head/head_edit.html", employee=employee)
 
-    return render_template("hr/head/employee_detail.html", employee=employee)
+    return render_template("hr/head/head_edit.html", employee=employee, positions=positions, departments=departments)
 
 
 @dept_head_bp.route('/employees')
@@ -88,6 +118,8 @@ def employees():
             (Employee.last_name.contains(search)) |
             (Employee.employee_id.contains(search))
         )
+
+    query = query.order_by(Employee.last_name.asc(), Employee.first_name.asc())
 
     # Paginate results
     employees = query.paginate(page=page, per_page=10, error_out=False)
@@ -129,42 +161,52 @@ def export_employees():
     )
 
 
-
 @dept_head_bp.route('/attendance')
 @login_required
 @dept_head_required
 def attendance():
     page = request.args.get('page', 1, type=int)
-    date_filter = request.args.get('date')
-    employee_filter = request.args.get('employee')
+    search = request.args.get('search', '', type=str).strip()
+    date_filter = request.args.get('date', type=str)
+    employee_filter = request.args.get('employee', type=int)
 
-    dept_id = current_user.department_id  # Dept Head's department
+    dept_id = current_user.department_id
 
-    # Employees in this department
-    employees = Employee.query.filter_by(department_id=dept_id, active=True).all()
+    # --- EMPLOYEES: same department ---
+    emp_query = Employee.query.filter(
+        Employee.department_id == dept_id,
+        Employee.active == True
+    ).filter(Employee.id != current_user.id)
 
-    # Attendance base query
-    query = Attendance.query.join(Employee).filter(Employee.department_id == dept_id)
+    if search:
+        emp_query = emp_query.filter(
+            (Employee.first_name.ilike(f"%{search}%")) |
+            (Employee.last_name.ilike(f"%{search}%")) |
+            (Employee.email.ilike(f"%{search}%"))
+        )
 
+    employees = emp_query.order_by(Employee.last_name.asc()).paginate(page=page, per_page=10, error_out=False)
+
+    # --- ATTENDANCE RECORDS ---
+    att_query = Attendance.query.join(Employee).filter(Employee.department_id == dept_id)
     if date_filter:
-        query = query.filter(Attendance.date == date_filter)
+        att_query = att_query.filter(Attendance.date == date_filter)
     if employee_filter:
-        query = query.filter(Attendance.employee_id == employee_filter)
+        att_query = att_query.filter(Attendance.employee_id == employee_filter)
 
-    attendances = query.order_by(Attendance.date.desc()).paginate(page=page, per_page=10, error_out=False)
+    attendances = att_query.order_by(Attendance.date.desc()).paginate(page=page, per_page=10, error_out=False)
 
-    # --- Absentees ---
+    # --- ABSENTEES ---
     absentees = []
     if date_filter:
-        attended_ids = [att.employee_id for att in query.all()]
+        attended_ids = [att.employee_id for att in att_query.all()]
         absentees = Employee.query.filter(
             Employee.department_id == dept_id,
             Employee.active == True,
             ~Employee.id.in_(attended_ids)
         ).all()
 
-    # --- Late arrivals ---
-    # Example: assume shift starts at 9:00
+    # --- LATE ARRIVALS ---
     shift_start = datetime.strptime("09:00", "%H:%M").time()
     late_arrivals = []
     if date_filter:
@@ -176,13 +218,17 @@ def attendance():
 
     return render_template(
         'hr/head/head_attendance.html',
-        attendances=attendances,
         employees=employees,
+        attendances=attendances,
         absentees=absentees,
         late_arrivals=late_arrivals,
+        search=search,
         date_filter=date_filter,
         employee_filter=employee_filter
     )
+
+
+
 
 
 # --- Export Route ---
@@ -221,6 +267,8 @@ def export_attendance():
                     headers={"Content-Disposition": "attachment;filename=attendance_report.csv"})
 
 
+
+
 @dept_head_bp.route('/attendance/add', methods=['GET', 'POST'])
 @login_required
 @dept_head_required
@@ -252,7 +300,8 @@ def add_attendance():
             db.session.rollback()
             flash('Error recording attendance. Please try again.', 'error')
 
-    return render_template('hr/add_attendance.html', form=form)
+    return render_template('add_attendance.html', form=form)
+
 
 @dept_head_bp.route('/leaves')
 @login_required
@@ -274,7 +323,7 @@ def leaves():
         query = query.filter_by(status=status_filter)
 
     leaves = query.order_by(Leave.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('hr/leaves.html', leaves=leaves, status_filter=status_filter)
+    return render_template('hr/head/leaves.html', leaves=leaves, status_filter=status_filter)
 
 @dept_head_bp.route('/leaves/<int:leave_id>/approve', methods=['POST'])
 @login_required
@@ -302,4 +351,25 @@ def approve_leave(leave_id):
         db.session.rollback()
         flash('Error updating leave request.', 'error')
 
-    return redirect(url_for('dept_head.leaves'))
+    return redirect(url_for('dept_head.leaves'))@dept_head_bp.route('/profile', methods=['GET', 'POST'])
+
+# ----------------- EDIT PASSWORD ROUTE FOR DEPT HEAD -----------------
+@dept_head_bp.route('/edit_password', methods=['GET', 'POST'])
+@login_required
+@dept_head_required
+def edit_password():
+    if request.method == 'POST':
+        new_password = request.form.get('password', '').strip()
+        if not new_password:
+            flash("⚠️ Password cannot be empty.", "warning")
+            return redirect(url_for('dept_head.edit_password'))
+
+        # Update password directly (no hashing)
+        current_user.password = new_password
+        db.session.commit()
+
+        flash("✅ Password successfully updated.", "success")
+        return redirect(url_for('dept_head.edit_password'))
+
+    # GET request → show the form
+    return render_template('hr/head/edit_profile.html')  # create this template

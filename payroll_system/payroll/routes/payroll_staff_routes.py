@@ -6,9 +6,20 @@ from payroll_system.payroll.forms import PayslipForm, PayrollSummaryForm
 from payroll_system.payroll.utils import staff_required, calculate_payroll_summary, get_current_payroll_period
 from payroll_system.payroll import db
 from datetime import datetime, date
+import os
 
-payroll_staff_bp = Blueprint('payroll_staff', __name__)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))  # Thesis/
+TEMPLATE_DIR = os.path.join(BASE_DIR,  "templates", "payroll", "staff")
+STATIC_DIR = os.path.join(BASE_DIR, "payroll_static")
 
+
+payroll_staff_bp = Blueprint(
+    "payroll_staff",
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path="/payroll/static"
+)
 @payroll_staff_bp.route('/dashboard')
 @login_required
 @staff_required
@@ -27,7 +38,7 @@ def dashboard():
     # Get recent payslips
     recent_payslips = Payslip.query.order_by(Payslip.generated_at.desc()).limit(5).all()
     
-    return render_template('payroll/staff_dashboard.html',
+    return render_template('staff_dashboard.html',
                          total_employees=total_employees,
                          total_payrolls=total_payrolls,
                          total_payslips=total_payslips,

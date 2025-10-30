@@ -1,0 +1,91 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Payroll Details{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Payroll Details</b></h1>
+    <p>
+      Period: <b>{{ period.period_name }}</b><br>
+      From {{ period.start_date.strftime('%b %d, %Y') }}
+      to {{ period.end_date.strftime('%b %d, %Y') }}
+    </p>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <div class="table-actions" style="margin-bottom: 1rem;">
+        <a href="{{ url_for('payroll_admin.payroll') }}" class="btn btn-secondary">← Back to Processing</a>
+        <a href="#" class="btn btn-primary">Download Report</a>
+      </div>
+
+      <table class="responsive-table">
+        <caption><b>Employee Payroll Summary</b></caption>
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Full Name</th>
+            <th>Basic Salary</th>
+            <th>Gross Pay</th>
+            <th>Total Deductions</th>
+            <th>Net Pay</th>
+            <th>Status</th>
+            <th>Processed Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payrolls %}
+          <tr>
+            <td data-label="Employee ID">{{ p.employee.employee_id }}</td>
+            <td data-label="Full Name">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
+            <td data-label="Basic Salary">₱ {{ "%.2f"|format(p.basic_salary) }}</td>
+            <td data-label="Gross Pay">₱ {{ "%.2f"|format(p.gross_pay) }}</td>
+            <td data-label="Total Deductions">₱ {{ "%.2f"|format(p.total_deductions) }}</td>
+            <td data-label="Net Pay"><b>₱ {{ "%.2f"|format(p.net_pay) }}</b></td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if p.status == 'Processed' else 'orange' }};">
+                {{ p.status }}
+              </span>
+            </td>
+            <td data-label="Processed Date">{{ p.created_at.strftime('%Y-%m-%d') }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8">No payrolls found for this period.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if payrolls %}
+      <div class="summary-card">
+        <h3>Overall Summary</h3>
+        <p><b>Total Gross Pay:</b> ₱ {{ "%.2f"|format(total_gross) }}</p>
+        <p><b>Total Deductions:</b> ₱ {{ "%.2f"|format(total_deductions) }}</p>
+        <p><b>Total Net Pay:</b> ₱ {{ "%.2f"|format(total_net) }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
+
+<style>
+.summary-card {
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-top: 20px;
+  padding: 20px;
+  width: 60%;
+}
+.summary-card h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+.summary-card p {
+  font-size: 15px;
+  margin: 4px 0;
+}
+</style>
+
+{% endblock %}

@@ -5,8 +5,21 @@ from payroll_system.payroll.models.payroll_models import Employee, Payroll, Pays
 from payroll_system.payroll.forms import PayslipSearchForm
 from payroll_system.payroll import db
 from datetime import datetime, date
+import os
 
-payroll_employee_bp = Blueprint('payroll_employee', __name__)
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "payroll_static")
+
+
+payroll_employee_bp = Blueprint(
+    "payroll_employee",
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path="/payroll/static"
+)
 
 @payroll_employee_bp.route('/dashboard')
 @login_required
@@ -31,11 +44,13 @@ def dashboard():
         Payroll.pay_period_start >= current_month
     ).first()
     
-    return render_template('payroll/employee_dashboard.html',
+    return render_template('employee_dashboard.html',
                          employee=employee,
                          recent_payrolls=recent_payrolls,
                          recent_payslips=recent_payslips,
                          current_payroll=current_payroll)
+
+                         
 
 @payroll_employee_bp.route('/profile')
 @login_required

@@ -1,12 +1,13 @@
-from main_app.extensions import db, login_manager
-from flask_login import UserMixin
-from datetime import datetime, date
+from main_app.extensions import db
+from datetime import datetime, date, time
 
+# =========================================================
+# HR MODELS
+# =========================================================
 
-# ==========================
-# EMPLOYEE MODEL
-# ==========================
 class Employee(db.Model):
+    __tablename__ = "employee"
+
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.String(20), unique=True, nullable=False)
 
@@ -38,6 +39,26 @@ class Employee(db.Model):
     attendances = db.relationship("Attendance", back_populates="employee", lazy=True)
     leaves = db.relationship("Leave", back_populates="employee", lazy=True)
 
+    # Payroll-related relationships
+    payrolls = db.relationship("Payroll", back_populates="employee", lazy=True)
+    payslips = db.relationship("Payslip", back_populates="employee", lazy=True)
+    employee_deductions = db.relationship("EmployeeDeduction", back_populates="employee", lazy=True, cascade="all, delete-orphan")
+    employee_allowances = db.relationship("EmployeeAllowance", back_populates="employee", lazy=True, cascade="all, delete-orphan")
+
+    # ✅ Convenient relationships (view-only)
+    deductions = db.relationship(
+        "Deduction",
+        secondary="employee_deductions",
+        viewonly=True,
+        lazy="joined"
+    )
+    allowances = db.relationship(
+        "Allowance",
+        secondary="employee_allowances",
+        viewonly=True,
+        lazy="joined"
+    )
+
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
 
@@ -45,10 +66,12 @@ class Employee(db.Model):
         return f"{self.first_name} {self.middle_name or ''} {self.last_name}".strip()
 
 
-# ==========================
-# ATTENDANCE MODEL
-# ==========================
+# =========================================================
+# ATTENDANCE
+# =========================================================
 class Attendance(db.Model):
+    __tablename__ = "attendance"
+
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
     date = db.Column(db.Date, nullable=False, default=date.today)
@@ -63,18 +86,24 @@ class Attendance(db.Model):
     def __repr__(self):
         return f"<Attendance {self.employee_id} - {self.date}>"
 
+    def check_late(self):
+        """Automatically mark as late if time_in is after 8:00 AM."""
+        if self.time_in and self.time_in > time(8, 0):  # 8:00 AM cutoff
+            self.status = "Late"
+            self.remarks = f"Late - Time In: {self.time_in.strftime('%I:%M %p')}"
+        else:
+            self.status = "Present"
 
-# ==========================
-# LEAVE MODEL
-# ==========================
+
+# =========================================================
+# LEAVE
+# =========================================================
 class Leave(db.Model):
+    __tablename__ = "leave"
+
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
-    leave_type_id = db.Column(
-        db.Integer,
-        db.ForeignKey("leave_type.id", name="fk_leave_leave_type_id"),
-        nullable=False
-    )
+    leave_type_id = db.Column(db.Integer, db.ForeignKey("leave_type.id", name="fk_leave_leave_type_id"), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     days_requested = db.Column(db.Integer, nullable=False)
@@ -86,7 +115,6 @@ class Leave(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
     employee = db.relationship("Employee", back_populates="leaves")
     leave_type = db.relationship("LeaveType", back_populates="leaves", foreign_keys=[leave_type_id])
     approver = db.relationship("User", back_populates="approved_leaves", foreign_keys=[approved_by])
@@ -95,10 +123,12 @@ class Leave(db.Model):
         return f"<Leave {self.employee_id} - {self.leave_type_id}>"
 
 
-# ==========================
-# DEPARTMENT MODEL
-# ==========================
+# =========================================================
+# DEPARTMENT / POSITION / LEAVE TYPE
+# =========================================================
 class Department(db.Model):
+    __tablename__ = "department"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
@@ -106,16 +136,13 @@ class Department(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     head = db.relationship("User", back_populates="managed_department", foreign_keys=[head_id])
-    employees = db.relationship("Employee", back_populates="department", lazy=True, foreign_keys=[Employee.department_id])
-    positions = db.relationship("Position", back_populates="department", lazy=True, foreign_keys="[Position.department_id]")
+    employees = db.relationship("Employee", back_populates="department", lazy=True)
+    positions = db.relationship("Position", back_populates="department", lazy=True)
 
     def __repr__(self):
         return f"<Department {self.name}>"
 
 
-# ==========================
-# POSITION MODEL
-# ==========================
 class Position(db.Model):
     __tablename__ = "position"
 
@@ -125,15 +152,12 @@ class Position(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey("department.id", name="fk_position_department_id"))
 
     department = db.relationship("Department", back_populates="positions", foreign_keys=[department_id])
-    employees = db.relationship("Employee", back_populates="position", lazy=True, foreign_keys=[Employee.position_id])
+    employees = db.relationship("Employee", back_populates="position", lazy=True)
 
     def __repr__(self):
         return f"<Position {self.name}>"
 
 
-# ==========================
-# LEAVE TYPE MODEL
-# ==========================
 class LeaveType(db.Model):
     __tablename__ = 'leave_type'
 
@@ -141,7 +165,7 @@ class LeaveType(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
 
-    leaves = db.relationship('Leave', back_populates='leave_type', lazy=True, foreign_keys="[Leave.leave_type_id]")
+    leaves = db.relationship('Leave', back_populates='leave_type', lazy=True)
 
     def __repr__(self):
         return f'<LeaveType {self.name}>'

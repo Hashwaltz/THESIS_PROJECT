@@ -1,0 +1,218 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Add Payroll Period{% endblock %}
+
+{% block content %}
+
+<!-- ✅ SweetAlert Toast Flash Messages -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        {% for category, message in messages %}
+          Swal.fire({
+            icon: "{{ 'success' if category == 'success' else 'error' }}",
+            title: "{{ message }}",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+          });
+        {% endfor %}
+      });
+    </script>
+  {% endif %}
+{% endwith %}
+
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Add Payroll Period</b></h1>
+  </header>
+
+  <div class="payroll-container">
+    <header>Payroll Period Details</header>
+
+    <form method="POST" action="{{ url_for('payroll_admin.add_payroll_period') }}" id="payrollForm">
+      <div class="form first">
+        <div class="details personal">
+          <div class="fields">
+
+            <!-- Payroll Period Name -->
+            <div class="input-field">
+              <label>Payroll Period Name</label>
+              <input
+                type="text"
+                name="period_name"
+                class="form-control"
+                placeholder="e.g. October 1–15, 2025"
+                required
+              />
+            </div>
+
+            <!-- Start Date -->
+            <div class="input-field">
+              <label>Start Date</label>
+              <input
+                type="date"
+                name="start_date"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <!-- End Date -->
+            <div class="input-field">
+              <label>End Date</label>
+              <input
+                type="date"
+                name="end_date"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <!-- Pay Date -->
+            <div class="input-field">
+              <label>Pay Date</label>
+              <input
+                type="date"
+                name="pay_date"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <!-- Status (hidden default: Open) -->
+            <input type="hidden" name="status" value="Open" />
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" class="submit" id="savePayrollBtn">
+          <span class="btnText">Create Payroll Period</span>
+          <i class="uil uil-navigator"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- ✅ SweetAlert2 Confirmation -->
+<script>
+  const form = document.getElementById("payrollForm");
+  const saveBtn = document.getElementById("savePayrollBtn");
+
+  saveBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+
+    Swal.fire({
+      title: "Confirm Creation",
+      text: "Are you sure you want to create this payroll period?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, create it"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
+</script>
+
+<style>
+.payroll-container {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  margin: 0 15px;
+  margin-top: 20px;
+  padding: 30px;
+  position: relative;
+  width: 50%;
+}
+
+.payroll-container .input-field input,
+.payroll-container .input-field select {
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  color: #333;
+  height: 42px;
+  margin: 8px 0;
+  outline: none;
+  padding: 0 15px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.payroll-container .input-field input[type="date"] {
+  color: #707070;
+}
+.payroll-container .input-field input[type="date"]:valid {
+  color: #333;
+}
+.payroll-container .input-field input:focus,
+.payroll-container .input-field select:focus {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.13);
+}
+
+.payroll-container .input-field label {
+  color: #2e2e2e;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.payroll-container form {
+  min-height: 300px;
+  margin-top: 16px;
+  padding: 20px;
+  padding-bottom: 50px;
+  position: relative;
+}
+
+.payroll-container form button {
+  background-color: #4070f4;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  height: 45px;
+  margin: 25px 0;
+  max-width: 200px;
+  width: 100%;
+  transition: all 0.3s linear;
+}
+.payroll-container form button:hover {
+  background-color: #265df2;
+}
+
+.payroll-container form .fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.payroll-container form .fields .input-field {
+  width: calc(100% / 1 - 15px);
+}
+
+.payroll-container header {
+  color: #343a40;
+  font-size: 20px;
+  font-weight: 600;
+  position: relative;
+}
+
+.payroll-container header::before {
+  content: "";
+  position: absolute;
+  height: 3px;
+  width: 27px;
+  background-color: #4070f4;
+  bottom: -2px;
+  left: 0;
+}
+</style>
+
+{% endblock %}

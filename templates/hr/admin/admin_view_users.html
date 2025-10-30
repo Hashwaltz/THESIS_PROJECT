@@ -1,0 +1,101 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin-Users{% endblock %}
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head" style="margin-bottom: 10px;">
+    <h1><b>View All Users</b></h1>
+  </header>
+
+  <!-- Search & Role Filter -->
+  <div class="searching">
+    <form method="get" action="{{ url_for('hr_admin.view_users') }}" class="fields" id="filterForm">
+      <div class="input-field">
+        <input
+          type="text"
+          name="search"
+          id="search"
+          placeholder="Search by name or email"
+          value="{{ search }}"
+        />
+        <button type="submit">Search</button>
+      </div>
+
+      <div class="input-field">
+        <select name="role" id="role">
+          <option value="">All Roles</option>
+          {% for role in roles %}
+          <option value="{{ role }}" {% if role_filter == role %}selected{% endif %}>{{ role.title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption>
+          <b>Users List</b>
+        </caption>
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Last Login</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users.items %}
+          <tr>
+            <td data-label="Full Name">{{ user.get_full_name() }}</td>
+            <td data-label="Email">{{ user.email }}</td>
+            <td data-label="Role">{{ user.role or '-' }}</td>
+            <td data-label="Last Login">
+              {{ user.last_login.strftime('%Y-%m-%d') if user.last_login else '-' }}
+            </td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if user.active else 'red' }};">
+                {{ 'Active' if user.active else 'Inactive' }}
+              </span>
+            </td>
+            <td data-label="Actions">
+              <a href="{{ url_for('hr_admin.edit_user', user_id=user.id) }}" class="btn-action">
+                View | Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6">No users found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 15px;">
+        {% if users.has_prev %}
+          <a href="{{ url_for('hr_admin.view_users', page=users.prev_num, search=search, role=role_filter) }}">Previous</a>
+        {% endif %}
+        Page {{ users.page }} of {{ users.pages }}
+        {% if users.has_next %}
+          <a href="{{ url_for('hr_admin.view_users', page=users.next_num, search=search, role=role_filter) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Auto-submit form when role changes
+    const roleSelect = document.getElementById('role');
+    roleSelect.addEventListener('change', function () {
+      document.getElementById('filterForm').submit();
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Leave Reports{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Leave Reports</b></h1>
+  </header>
+
+  <!-- 🔹 Filter Form -->
+  <section class="searching">
+    <form method="get">
+      <div class="fields">
+        <div class="input-field">
+          <label>Start Date:</label>
+          <input type="date" name="start_date" value="{{ start_date }}">
+        </div>
+
+        <div class="input-field">
+          <label>End Date:</label>
+          <input type="date" name="end_date" value="{{ end_date }}">
+        </div>
+
+        <div class="input-field">
+          <label>Department:</label>
+          <select name="department_id">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if selected_dept == dept.id %}selected{% endif %}>
+                {{ dept.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="input-field">
+          <label>Leave Type:</label>
+          <select name="leave_type_id">
+            <option value="">All Types</option>
+            {% for lt in leave_types %}
+              <option value="{{ lt.id }}" {% if selected_leave_type == lt.id %}selected{% endif %}>
+                {{ lt.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- 🔹 Action Buttons -->
+      <div style="display: flex; gap: 15px; margin-top: 15px;">
+        <button type="submit">Filter</button>
+        <button type="button" class="printing" onclick="window.print()">Print</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 🔹 Report Results Table -->
+  <div class="table-container">
+    <caption><b>Leave Summary Report</b></caption>
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Department</th>
+          <th>Total Leave Days</th>
+          <th>No. of Leaves</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if results %}
+          {% for row in results %}
+            <tr>
+              <td data-label="Employee">{{ row.employee_name }}</td>
+              <td data-label="Department">{{ row.department_name }}</td>
+              <td data-label="Total Leave Days">{{ row.total_leave_days or 0 }}</td>
+              <td data-label="No. of Leaves">{{ row.leave_count or 0 }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" style="text-align:center;">No leave records found.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

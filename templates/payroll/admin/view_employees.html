@@ -1,0 +1,101 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Employees{% endblock %}
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Employee Records</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <!-- Search bar -->
+      <div class="searching">
+        <form method="get" action="{{ url_for('payroll_admin.view_employees') }}" class="search-form" id="employeeFilterForm">
+          <div class="fields">
+            <!-- Search input -->
+            <div class="input-field">
+              <input
+                type="text"
+                name="search"
+                value="{{ search }}"
+                placeholder="Search employees..."
+              />
+              <button type="submit">Filter</button>
+            </div>
+
+            <!-- Department dropdown -->
+            <div class="input-field">
+              <select name="department_id" id="departmentSelect">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.id }}" {% if dept.id == selected_department|int %}selected{% endif %}>
+                    {{ dept.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Employee table -->
+      <table class="responsive-table">
+        <caption><b>Employee List</b></caption>
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees.items %}
+          <tr>
+            <td data-label="Employee ID">{{ employee.employee_id }}</td>
+            <td data-label="Full Name">{{ employee.first_name }} {{ employee.last_name }}</td>
+            <td data-label="Email">{{ employee.email }}</td>
+            <td data-label="Department">{{ employee.department.name if employee.department else '-' }}</td>
+            <td data-label="Position">{{ employee.position.name if employee.position else '-' }}</td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if employee.active else 'red' }};">
+                {{ 'Active' if employee.active else 'Inactive' }}
+              </span>
+            </td>
+            <td data-label="Actions">
+              <a href="#" class="btn-action open-modal" data-id="{{ employee.id }}">View</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7">No employees found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        {% if employees.has_prev %}
+          <a href="{{ url_for('payroll_admin.view_employees', page=employees.prev_num, search=search, department_id=selected_department) }}">Previous</a>
+        {% endif %}
+        Page {{ employees.page }} of {{ employees.pages }}
+        {% if employees.has_next %}
+          <a href="{{ url_for('payroll_admin.view_employees', page=employees.next_num, search=search, department_id=selected_department) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 🔹 Auto-submit the form when department changes -->
+<script>
+  document.getElementById('departmentSelect').addEventListener('change', function() {
+    document.getElementById('employeeFilterForm').submit();
+  });
+</script>
+
+{% endblock %}

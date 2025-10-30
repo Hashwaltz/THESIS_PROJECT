@@ -1,0 +1,68 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Departments{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Departments</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption>
+          <b>Departments List</b>
+        </caption>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Head</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dept in departments.items %}
+          <tr>
+            <td data-label="Name">{{ dept.name }}</td>
+            <td data-label="Description">{{ dept.description or '-' }}</td>
+            <td data-label="Head">
+              {% if dept.head %}
+                {{ dept.head.get_full_name() }}
+              {% else %}
+                <em>No Head Assigned</em>
+              {% endif %}
+            </td>
+            <td data-label="Actions">
+              <a
+                href="{{ url_for('hr_admin.edit_department', department_id=dept.id) }}"
+                class="btn-action"
+                style="color: #4070f4; text-decoration: none;"
+              >
+                View | Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align:center;">No departments found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        {% if departments.has_prev %}
+        <a href="{{ url_for('hr_admin.view_departments', page=departments.prev_num) }}">Previous</a>
+        {% endif %}
+
+        <span>Page {{ departments.page }} of {{ departments.pages }}</span>
+
+        {% if departments.has_next %}
+        <a href="{{ url_for('hr_admin.view_departments', page=departments.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

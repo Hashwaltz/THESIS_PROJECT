@@ -4,6 +4,9 @@ from flask import current_app, request, jsonify
 from flask_login import current_user
 from hr_system.hr.models.hr_models import Department, Employee
 import requests
+import zipfile, tempfile, shutil, re
+import pandas as pd
+import os
 from sqlalchemy import func, case
 
 
@@ -68,9 +71,7 @@ def calculate_working_days(start_date, end_date):
     
     return working_days
 
-
 def generate_employee_id(department_id):
-    # Get department code
     dept = Department.query.get(department_id)
     if not dept:
         dept_code = 'EM'
@@ -79,24 +80,15 @@ def generate_employee_id(department_id):
         if len(dept_code) < 2:
             dept_code = dept.name[:2].upper()
 
-    # Get last employee in this department
-    last_employee = (
-        Employee.query.filter_by(department_id=department_id)
-        .order_by(Employee.id.desc())  # highest id = latest
-        .first()
-    )
+    new_num = 1
+    while True:
+        new_id = f"{dept_code}-{new_num:04d}"
+        exists = Employee.query.filter_by(employee_id=new_id).first()
+        if not exists:
+            break
+        new_num += 1
 
-    if last_employee:
-        try:
-            last_num = int(last_employee.employee_id.split('-')[-1])
-            new_num = last_num + 1
-        except (ValueError, IndexError):
-            new_num = 1
-    else:
-        new_num = 1
-
-    return f"{dept_code}-{new_num:04d}"
-
+    return new_id
 
 
 def send_notification_email(to_email, subject, message):
@@ -271,3 +263,57 @@ def get_current_month_range():
         end_date = date(today.year, today.month + 1, 1) - timedelta(days=1)
     
     return start_date, end_date
+
+
+
+
+# ----------------- HELPER FUNCTIONS -----------------
+def unlock_xlsx(file_path, unlocked_path):
+    tmpdir = tempfile.mkdtemp()
+    try:
+        with zipfile.ZipFile(file_path, "r") as z:
+            z.extractall(tmpdir)
+
+        # remove protection tags
+        pat = re.compile(r"<(sheetProtection|workbookProtection)\b[^>]*/>", re.IGNORECASE)
+        targets = []
+
+        wb = os.path.join(tmpdir, "xl", "workbook.xml")
+        if os.path.exists(wb):
+            targets.append(wb)
+
+        wsdir = os.path.join(tmpdir, "xl", "worksheets")
+        if os.path.isdir(wsdir):
+            for f in os.listdir(wsdir):
+                if f.endswith(".xml"):
+                    targets.append(os.path.join(wsdir, f))
+
+        for f in targets:
+            with open(f, "r", encoding="utf-8") as fh:
+                txt = fh.read()
+            new = pat.sub("", txt)
+            if new != txt:
+                with open(f, "w", encoding="utf-8") as fh:
+                    fh.write(new)
+
+        # rezip as unlocked xlsx
+        with zipfile.ZipFile(unlocked_path, "w", zipfile.ZIP_DEFLATED) as z:
+            for folder, _, files in os.walk(tmpdir):
+                for file in files:
+                    full = os.path.join(folder, file)
+                    arc = os.path.relpath(full, tmpdir).replace("\\", "/")
+                    z.write(full, arc)
+    finally:
+        shutil.rmtree(tmpdir)
+
+
+
+
+def load_excel_to_df(file_path):
+    unlocked_path = file_path.replace(".xlsx", "_unlocked.xlsx")
+    try:
+        unlock_xlsx(file_path, unlocked_path)
+        df = pd.read_excel(unlocked_path)
+    except Exception:
+        df = pd.read_excel(file_path)
+    return df

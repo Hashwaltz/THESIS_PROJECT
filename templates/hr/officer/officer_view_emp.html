@@ -1,0 +1,133 @@
+{% extends 'hr/officer/officer_base.html' %}
+{% block title %}HR Officer - View Employees{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Employee Records</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+
+      <!-- ============================
+           SEARCH & FILTER
+      ============================= -->
+      <div class="searching">
+        <form method="get" action="{{ url_for('officer.employees') }}" class="search-form" id="filterForm">
+          <div class="fields" style="display: flex; align-items: center; gap: 10px;">
+
+            <!-- 🔍 Search -->
+            <div class="input-field" style="flex: 1;">
+              <input type="text" name="search" value="{{ search }}" placeholder="Search employees...">
+              <button type="submit">Search</button>
+            </div>
+
+            <!-- 🏢 Department Filter -->
+            <div class="input-field" style="flex: 0 0 220px;">
+              <select name="department" id="departmentFilter">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
+                    {{ dept.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- ============================
+           EMPLOYEE TABLE
+      ============================= -->
+      <table class="responsive-table">
+        <caption><b>Employee List</b></caption>
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Date Hired</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees.items %}
+          <tr>
+            <td data-label="Full Name">{{ employee.get_full_name() }}</td>
+            <td data-label="Email">{{ employee.email }}</td>
+            <td data-label="Phone">{{ employee.phone or '-' }}</td>
+            <td data-label="Department">{{ employee.department.name if employee.department else '-' }}</td>
+            <td data-label="Position">{{ employee.position.name if employee.position else '-' }}</td>
+            <td data-label="Date Hired">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
+            <td data-label="Actions">
+              <a href="{{ url_for('officer.edit_employee', employee_id=employee.id) }}" class="btn-action">
+                View | Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7">No employees found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- ============================
+           PAGINATION
+      ============================= -->
+      <div class="pagination">
+        {% if employees.has_prev %}
+          <a href="{{ url_for('officer.employees', page=employees.prev_num, search=search, department=selected_department) }}">Previous</a>
+        {% endif %}
+
+        Page {{ employees.page }} of {{ employees.pages }}
+
+        {% if employees.has_next %}
+          <a href="{{ url_for('officer.employees', page=employees.next_num, search=search, department=selected_department) }}">Next</a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ============================
+     JAVASCRIPT
+============================= -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Auto-filter by department when changed
+  const departmentFilter = document.getElementById("departmentFilter");
+  departmentFilter.addEventListener("change", function () {
+    document.getElementById("filterForm").submit();
+  });
+});
+</script>
+
+<!-- SweetAlert Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        {% for category, message in messages %}
+          Swal.fire({
+            icon: '{{ 'success' if category == 'success' else 'info' }}',
+            title: '{{ message }}',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        {% endfor %}
+      });
+    </script>
+  {% endif %}
+{% endwith %}
+
+{% endblock %}

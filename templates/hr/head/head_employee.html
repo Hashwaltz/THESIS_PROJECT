@@ -1,0 +1,136 @@
+{% extends 'hr/head/head_base.html' %} 
+{% block title %}Department Head - Employees{% endblock %}
+{% block content %}
+<main class="content-wrap">
+
+  <header class="content-head">
+    <h1><b>Employee Records</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <!-- Search bar -->
+      <div class="searching">
+        <form method="get" action="{{ url_for('dept_head.employees') }}" class="search-form">
+          <div class="fields">
+            <div class="input-field">
+              <input type="text" name="search" value="{{ search }}" placeholder="Search employees...">
+              <button type="submit">Search</button>
+              <a href="{{ url_for('dept_head.export_employees') }}" style="text-decoration: none;color: #fff;" class="printing">
+                  <span class="material-symbols-outlined">file_export</span>
+                  Print
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <table class="responsive-table">
+        <caption><b>Employee List</b></caption>
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Date Hired</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees %}
+          <tr>
+            <td data-label="Full Name">{{ employee.get_full_name() }}</td>
+            <td data-label="Email">{{ employee.email }}</td>
+            <td data-label="Department">
+              {{ employee.department.name if employee.department else '-' }}
+            </td>
+            <td data-label="Position">
+              {{ employee.position.name if employee.position else '-' }}
+            </td>
+            <td data-label="Date Hired">
+              {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
+            </td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if employee.active else 'red' }};">
+                {{ 'Active' if employee.active else 'Inactive' }}
+              </span>
+            </td>
+            <td data-label="Actions">
+              <a href="{{ url_for('dept_head.edit_employee', employee_id=employee.id) }}" class="btn-action">
+                View
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9">No employees found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        {% if employees.has_prev %}
+        <a href="{{ url_for('dept_head.employees', page=employees.prev_num, search=search) }}">Previous</a>
+        {% endif %}
+
+        Page {{ employees.page }} of {{ employees.pages }}
+
+        {% if employees.has_next %}
+        <a href="{{ url_for('dept_head.employees', page=employees.next_num, search=search) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if absentees %}
+  <section class="person-boxes">
+    {% for emp in absentees %}
+    <div class="person-box">
+      <div class="box-avatar">
+        <img
+          src="{{ emp.photo if emp.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+          alt="{{ emp.get_full_name() }}"
+        />
+      </div>
+      <div class="box-bio">
+        <h2 class="bio-name">{{ emp.get_full_name() }}</h2>
+        <p class="bio-position">
+          {{ emp.position.name if emp.position else "No Position" }}
+        </p>
+        <p class="bio-status" style="color:red;">Absent</p>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if late_arrivals %}
+  <section class="person-boxes">
+    {% for l in late_arrivals %}
+    <div class="person-box">
+      <div class="box-avatar">
+        <img
+          src="{{ l.employee.photo if l.employee.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+          alt="{{ l.employee.get_full_name() }}"
+        />
+      </div>
+      <div class="box-bio">
+        <h2 class="bio-name">{{ l.employee.get_full_name() }}</h2>
+        <p class="bio-position">
+          {{ l.employee.position.name if l.employee.position else "No Position" }}
+        </p>
+        <p class="bio-status" style="color:orange;">
+          Late - {{ l.time_in.strftime('%H:%M') }}
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+</main>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %} {% block title %}Payroll
+History - {{ period.period_name }}{% endblock %} {% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>Payrolls for Period: {{ period.period_name }}</h1>
+  </header>
+
+  <div class="table-container">
+    <a
+      href="{{ url_for('payroll_admin.payroll_history_dashboard') }}"
+      class="btn-back"
+      style="
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        text-decoration: none;
+      "
+    >
+      <span class="material-symbols-outlined">arrow_back</span>
+      Back
+    </a>
+
+    <table class="responsive-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Employee</th>
+          <th>Gross Pay</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          <th>Processed At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in payroll_records %}
+        <tr>
+          <td>{{ record.id }}</td>
+          <td>
+            {{ record.employee.first_name }} {{ record.employee.last_name }}
+          </td>
+          <td>₱ {{ "{:,.2f}".format(record.gross_pay) }}</td>
+          <td>₱ {{ "{:,.2f}".format(record.net_pay) }}</td>
+          <td>{{ record.status }}</td>
+          <td>
+            {{ record.created_at.strftime('%b %d, %Y') if record.created_at else
+            'N/A' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6">No payroll records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

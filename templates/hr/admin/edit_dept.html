@@ -1,0 +1,109 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Edit Department{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Edit Department</b></h1>
+  </header>
+
+  <div class="department-container">
+    <header>Department Details</header>
+    <!-- IMPORTANT: method="POST" so Flask receives form data -->
+    <form method="POST" id="editDepartmentForm" action="{{ url_for('hr_admin.edit_department', department_id=department.id) }}">
+      {{ form.hidden_tag() if form else '' }}
+      <!-- for CSRF token if using Flask-WTF -->
+
+      <div  class="form first">
+        <div class="details personal">
+          <div class="fields">
+            <!-- Department Name -->
+            <div class="input-field">
+              <label>Department Name</label>
+              <input 
+                type="text" 
+                name="name" 
+                class="form-control" 
+                placeholder="Enter department name" 
+                value="{{ department.name }}" 
+                required
+              />
+            </div>
+
+            <!-- Description -->
+            <div class="input-field">
+              <label style="margin-bottom: 5px">Description</label>
+              <textarea 
+                name="description" 
+                class="form-control" 
+                placeholder="Enter department description" 
+                rows="4"
+              >{{ department.description }}</textarea>
+            </div>
+
+            <!-- Department Head -->
+            <div class="input-field">
+              <label>Department Head</label>
+              <select name="dept_head" class="form-control">
+                <option value="">Select Department Head</option>
+                {% for emp in department.employees %}
+                  {% if emp.user %}
+                    <option value="{{ emp.user.id }}" {% if department.head_id == emp.user.id %}selected{% endif %}>
+                      {{ emp.user.get_full_name() }}
+                    </option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit & Back Buttons -->
+        <div class="buttons" style="display: flex; gap: 10px; margin-top: 20px;">
+          <!-- Submit -->
+          <button type="submit" class="submit" id="updateDepartmentBtn" style="flex: 1;">
+            <span class="btnText">Update Department</span>
+            <i class="uil uil-navigator"></i>
+          </button>
+
+          <!-- Back -->
+          <a href="{{ url_for('hr_admin.view_departments') }}" style="flex: 1; text-decoration: none;">
+            <button type="button" class="submit" style="width: 100%;">
+              <span class="btnText">Back</span>
+              <i class="uil uil-arrow-left"></i>
+            </button>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("editDepartmentForm");
+  const updateBtn = document.getElementById("updateDepartmentBtn");
+
+  updateBtn.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "Do you want to save the changes to this department?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#4070f4',
+      cancelButtonColor: '#dc3545',
+      confirmButtonText: 'Yes, update it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

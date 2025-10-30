@@ -1,0 +1,122 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head - Leave Requests{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>Leave Requests</h1>
+  </header>
+
+  <!-- Filter Form -->
+  <div class="search-box">
+    <form method="get" class="filter-form" id="statusFilterForm">
+      <div class="fields">
+        <div class="input-field">
+          <label>Status</label>
+          <select id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
+            <option value="">All</option>
+            <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+            <option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
+            <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Leave Records Table -->
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption><b>Leave List</b></caption>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Requested At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leave in leaves.items %}
+          <tr>
+            <td data-label="Employee">{{ leave.employee.get_full_name() }}</td>
+            <td data-label="Leave Type">{{ leave.leave_type.name }}</td>
+            <td data-label="Start Date">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+            <td data-label="End Date">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+            <td data-label="Reason">{{ leave.reason }}</td>
+            <td data-label="Status">
+              <span
+                {% if leave.status == 'Approved' %} style="color: green; font-weight:bold;" 
+                {% elif leave.status == 'Pending' %} style="color: orange; font-weight:bold;" 
+                {% elif leave.status == 'Rejected' %} style="color: red; font-weight:bold;" 
+                {% endif %}
+              >
+                {{ leave.status }}
+              </span>
+            </td>
+            <td data-label="Requested At">{{ leave.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td data-label="Actions">
+              {% if leave.status == 'Pending' %}
+                <form method="POST" action="{{ url_for('dept_head.approve_leave', leave_id=leave.id) }}" style="display:inline;">
+                  <input type="hidden" name="status" value="Approved">
+                  <input type="text" name="comments" placeholder="Optional comment" style="width: 120px;">
+                  <button type="submit" class="btn-approve">Approve</button>
+                </form>
+                <form method="POST" action="{{ url_for('dept_head.approve_leave', leave_id=leave.id) }}" style="display:inline;">
+                  <input type="hidden" name="status" value="Rejected">
+                  <input type="text" name="comments" placeholder="Optional comment" style="width: 120px;">
+                  <button type="submit" class="btn-reject">Reject</button>
+                </form>
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8">No leave requests found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        {% if leaves.has_prev %}
+          <a href="{{ url_for('dept_head.leaves', page=leaves.prev_num, status=status_filter) }}">Previous</a>
+        {% endif %}
+
+        Page {{ leaves.page }} of {{ leaves.pages }}
+
+        {% if leaves.has_next %}
+          <a href="{{ url_for('dept_head.leaves', page=leaves.next_num, status=status_filter) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      {% if category == 'success' or category == 'error' %}
+        Swal.fire({
+          icon: '{{ "success" if category=="success" else "error" }}',
+          title: '{{ msg }}',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Employee {% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link
+      rel="stylesheet"
+      href="https://public.codepenassets.com/css/normalize-5.0.0.min.css"
+    />
+    <link rel="canonical" href="https://codepen.io/blex/pen/VBGNxq" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('employee.static', filename='css/style2.css') }}"
+    />
+    <link 
+      rel="stylesheet"
+      href="{{ url_for('employee.static', filename='css/forms.css') }}"
+    />  
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('employee.static', filename='img/favicon.avif') }}"
+    />
+
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+    <script>
+      window.console = window.console || function (t) {};
+    </script>
+  </head>
+  <body>
+    <div class="dashboard">
+      <aside class="search-wrap">
+        <div class="search" style="display: flex; align-items: center; gap: 10px;">
+          <label>
+          <img
+              src="{{ url_for('employee.static', filename='img/logo2.avif') }}"
+              alt="Logo"
+              width="60"
+              height="60"
+              class="logo"
+              style="border-radius: 50%;" 
+          >
+          <h2 style="color:#ced4da; margin: 4px;">GovHRPay</h2>
+          </label>
+        </div>
+
+        <div class="user-actions">
+          <a href="{{ url_for('hr_auth.logout') }}" title="Logout">
+            <button type ="submit">
+              <span class="material-symbols-outlined">
+              logout
+              </span>
+            </button>  
+          </a>
+          </form>
+        </div>
+      </aside>
+
+      <header class="menu-wrap">
+        <figure class="user">
+          <div class="user-avatar">
+            <img
+              src="{{ url_for('employee.static', filename='images/user/user_logo.webp') }}"
+              alt="User Profile"
+            />
+          </div>
+          <figcaption>
+            {{ current_user.first_name }} {{current_user.last_name}} 
+          </figcaption>
+        </figure>
+
+        <nav>
+          <section class="dicover">
+            <ul>
+              <h3>Employee Navigations</h3>
+                 <li>
+                    <a href="{{ url_for('employee.dashboard') }}" >
+                      <span class="material-symbols-outlined">
+                        dashboard
+                      </span>
+                      Dashboard
+                    </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('employee.attendance') }}" >
+                 <span class="material-symbols-outlined">
+                    calendar_clock
+                  </span>
+                  View Attendance
+                </a>
+              </li>
+
+               <li>
+                <a href="{{ url_for('employee.leaves') }}" >
+                 <span class="material-symbols-outlined">
+                  assignment_add
+                  </span>
+                  Leaves
+                </a>
+              </li>
+
+               <li>
+                <a href="{{ url_for('employee.edit_password') }}" >
+                <span class="material-symbols-outlined">
+                  manage_accounts
+                  </span>
+                  Profiles Settings
+                </a>
+              </li>
+            </ul>
+          </section>
+        </nav>
+      </header>
+      <main class="content-wrap">{% block content %}{% endblock %}</main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </body>
+</html>

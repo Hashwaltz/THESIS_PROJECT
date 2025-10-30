@@ -1,0 +1,101 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Attendance Reports{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Attendance Reports</b></h1>
+    <!-- Action Buttons -->
+    <div class="action" style="display:flex; gap:10px; margin-top:10px;">
+      <!-- Download Word Button -->
+      <a href="{{ url_for('hr_admin.attendance_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
+         class="btn-primary" target="_blank">
+        Download Word
+      </a>
+    </div>
+  </header>
+
+  <!-- Filter Form -->
+  <div class="searching">
+    <form method="get" class="fields inline-form">
+      <div class="input-field">
+        <label>Start Date:</label>
+        <input type="date" name="start_date" value="{{ start_date }}">
+      </div>
+
+      <div class="input-field">
+        <label>End Date:</label>
+        <input type="date" name="end_date" value="{{ end_date }}">
+      </div>
+
+      <div class="input-field">
+        <label>Department:</label>
+        <select name="department_id">
+          <option value="">All</option>
+          {% for d in departments %}
+            <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="input-field">
+        <button type="submit" class="btn-primary">Generate</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Attendance Table -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Employee Name</th>
+          <th>Department</th>
+          <th>Days Present</th>
+          <th>Total Hours Worked</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report_data %}
+          <tr>
+            <td data-label="Employee Name">{{ row.employee_name }}</td>
+            <td data-label="Department">{{ row.department_name }}</td>
+            <td data-label="Days Present">{{ row.days_present }}</td>
+            <td data-label="Total Hours Worked">{{ row.total_hours }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center">No attendance records found</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .content-wrap, .content-wrap * {
+      visibility: visible;
+    }
+    .content-wrap {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    button, a {
+      display: none; /* Hide buttons while printing */
+    }
+    table {
+      width: 100% !important;
+      font-size: 12pt;
+    }
+  }
+</style>
+{% endblock %}

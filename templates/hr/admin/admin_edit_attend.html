@@ -1,0 +1,79 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Edit Attendance{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>Edit Attendance</h1>
+  </header>
+
+  <div class="edit-container">
+    <form id="editAttendanceForm" method="POST" action="">
+      {{ form.hidden_tag() }}
+      <div class="form first">
+        <div class="details personal">
+          <div class="fields">
+
+            <div class="input-field">
+              <label>Employee</label>
+              {{ form.employee_id(class="form-select", required=True) }}
+            </div>
+
+            <div class="input-field">
+              <label>Date</label>
+              {{ form.date(class="form-control", type="date", required=True) }}
+            </div>
+
+            <div class="input-field">
+              <label>Time In</label>
+              {{ form.time_in(class="form-control", type="time") }}
+            </div>
+
+            <div class="input-field">
+              <label>Time Out</label>
+              {{ form.time_out(class="form-control", type="time") }}
+            </div>
+
+            <div class="input-field">
+              <label>Status</label>
+              {{ form.status(class="form-select", required=True) }}
+            </div>
+
+            <div class="input-field" style="width:100%">
+              <label>Remarks</label>
+              {{ form.remarks(class="form-control", rows="2") }}
+            </div>
+
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="submit" style="color: #fff;" class="printing">Update</button>
+          <a href="{{ url_for('hr_admin.attendance') }}" class="printing">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById("editAttendanceForm").addEventListener("submit", function(e){
+    e.preventDefault(); // prevent default submit
+    const form = this;
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to update this attendance record?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, update!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if(result.isConfirmed){
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

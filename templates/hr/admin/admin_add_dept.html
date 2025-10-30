@@ -1,0 +1,77 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %} HR Admin - Add Department {% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Add Department</b></h1>
+  </header>
+
+  <div class="department-container">
+    <header>Department Details</header>
+    <form method="POST" action="{{ url_for('hr_admin.add_department') }}">
+      {{ form.hidden_tag() }}
+
+      <div class="form first">
+        <div class="details personal">
+          <div class="fields">
+            <div class="input-field">
+              <label>Department Name</label>
+              {{ form.name(class="form-control", placeholder="Enter department name", required=true) }}
+            </div>
+
+            <div class="input-field">
+              <label style="margin-bottom: 5px">Description</label>
+              {{ form.description(class="form-control", placeholder="Enter department description") }}
+            </div>
+
+            <div class="input-field">
+              <label>Department Head</label>
+              {{ form.head_id(class="form-control") }}
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="submit">
+          <span class="btnText">Submit</span>
+          <i class="uil uil-navigator"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% if category == 'success' %}
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '{{ message }}',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            willClose: () => {
+              // Redirect to department list after 2 seconds
+              window.location.href = "{{ url_for('hr_admin.view_departments') }}";
+            }
+          });
+        {% elif category == 'error' %}
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '{{ message }}',
+            confirmButtonColor: '#e74a3b'
+          });
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+});
+</script>
+{% endblock %}

@@ -1,10 +1,26 @@
-from main_app import db
+# payroll_system/payroll/models/__init__.py
 
-# import all models here to avoid circular imports
-from .payroll_models import Employee, Payroll, Payslip, Deduction, Allowance, Tax, PayrollPeriod
-from .user import PayrollUser
- 
+from .payroll_models import (
+    Payroll,
+    Payslip,
+    Deduction,
+    Allowance,
+    Tax,
+    PayrollPeriod,
+    EmployeeAllowance,
+    EmployeeDeduction
+)
 
-__all__ = ['PayrollUser', 'Employee', 'Payroll', 'Payslip', 'Deduction', 'Allowance', 'Tax']
-
-
+# Import Employee separately from HR module
+from hr_system.hr.models.hr_models import Employee
+__all__ = [
+    "Payroll",
+    "Payslip",
+    "Deduction",
+    "Allowance",
+    "Tax",
+    "PayrollPeriod",
+    "EmployeeAllowance",
+    "EmployeeDeduction",
+    "Employee"
+]

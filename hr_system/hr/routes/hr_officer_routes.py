@@ -1,17 +1,29 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm
 from ..utils import hr_officer_required, get_attendance_summary, get_current_month_range
 from .. import db
 from sqlalchemy.orm import joinedload
+import os
+from werkzeug.utils import secure_filename
+import pandas as pd
+import uuid
 
 
-hr_officer_bp = Blueprint('hr_officer', __name__,
-                           template_folder='../templates',
-                           static_folder='../static')
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "hr_static")
+
+hr_officer_bp = Blueprint(
+    'officer',
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path='/hr/static'
+    )
 
 
 # --- OFFICER DASHBOARD ---
@@ -89,6 +101,10 @@ def employees():
     if department:
         query = query.filter_by(department_id=department)
 
+    # ✅ Sort employees in ascending order by last name, then first name
+    query = query.order_by(Employee.last_name.asc(), Employee.first_name.asc())
+
+    # Pagination
     employees = query.paginate(page=page, per_page=10, error_out=False)
 
     # Fetch all departments for dropdown
@@ -110,43 +126,43 @@ def employees():
 @login_required
 @hr_officer_required  
 def edit_employee(employee_id):
+    """HR Officer can edit limited employee info"""
     employee = Employee.query.get_or_404(employee_id)
+    departments = Department.query.all()
+    positions = Position.query.all()
 
     if request.method == "POST":
         try:
-            
+            # ✅ Update editable fields
             employee.phone = request.form.get("phone")
             employee.address = request.form.get("address")
             employee.marital_status = request.form.get("marital_status")
             employee.emergency_contact = request.form.get("emergency_contact")
             employee.emergency_phone = request.form.get("emergency_phone")
 
-            # System fields
             employee.updated_at = datetime.utcnow()
-
             db.session.commit()
-            flash("Employee contact details updated successfully!", "success")
-            return redirect(url_for("hr_officer.employees"))
+
+            # ✅ Return SweetAlert-friendly JSON response
+            return jsonify({
+                "status": "success",
+                "message": "Employee contact details updated successfully!"
+            })
 
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating employee {employee_id}: {e}")
-            flash("Error updating employee. Please try again.", "error")
-
-    # 🔹 Render the HR Officer template (limited fields only)
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template(
-            "hr/officer/officer_edit.html",
-            employee=employee
-        )
+            return jsonify({
+                "status": "error",
+                "message": "Error updating employee. Please try again."
+            }), 500
 
     return render_template(
         "hr/officer/officer_edit.html",
-        employee=employee
+        employee=employee,
+        departments=departments,
+        positions=positions
     )
-
-
-
 
 # Your existing view_attendance route for officer
 @hr_officer_bp.route('/attendance')
@@ -181,96 +197,179 @@ def attendance():
         employee_filter=employee_filter
     )
 
-@hr_officer_bp.route('/attendance/add', methods=['GET', 'POST'])
+
+
+# ----------------- CONFIG -----------------
+OFFICER_ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+OFFICER_UPLOAD_FOLDER = "uploads/attendance/officer"
+
+def allowed_officer_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in OFFICER_ALLOWED_EXTENSIONS
+
+
+# ----------------- UPLOAD & PREVIEW -----------------
+@hr_officer_bp.route('/attendance/add_bulk', methods=['GET', 'POST'])
 @login_required
 @hr_officer_required
-def add_attendance():
-    form = AttendanceForm()
-    # Populate choices for employee_id
-    form.employee_id.choices = [(e.id, f"{e.employee_id} - {e.get_full_name()}") for e in Employee.query.filter_by(active=True).order_by(Employee.first_name).all()]
+def add_bulk_attendance():
+    preview_data = []
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and 'file' in request.files:
+        file = request.files.get("file")
+        if not file or not allowed_officer_file(file.filename):
+            flash("Please upload a valid Excel file (.xls or .xlsx).", "danger")
+            return redirect(request.url)
+
+        # Save uploaded file
+        filename = secure_filename(file.filename)
+        os.makedirs(OFFICER_UPLOAD_FOLDER, exist_ok=True)
+        filepath = os.path.join(OFFICER_UPLOAD_FOLDER, f"{uuid.uuid4().hex}_{filename}")
+        file.save(filepath)
+
         try:
-            # Check for existing attendance for the same employee and date
-            existing_attendance = Attendance.query.filter_by(
-                employee_id=form.employee_id.data,
-                date=form.date.data
-            ).first()
+            df = pd.read_excel(filepath, header=None)
+            records = []
+            current_id, current_name, current_dept = None, None, None
+            attendance_date = None
 
-            if existing_attendance:
-                flash('Attendance record for this employee and date already exists. Please use "Edit" to modify.', 'warning')
-                return redirect(url_for('hr_officer.add_attendance'))
+            for _, row in df.iterrows():
+                line = " ".join(str(x) for x in row if str(x) != "nan").strip()
+                if not line or "tabling date" in line.lower():
+                    continue
 
-            attendance = Attendance(
-                employee_id=form.employee_id.data,
-                date=form.date.data,
-                time_in=form.time_in.data,
-                time_out=form.time_out.data,
-                status=form.status.data,
-                remarks=form.remarks.data
+                # Extract attendance date
+                if "Attendance date:" in line:
+                    attendance_date = line.split(":")[-1].strip()
+                    continue
+
+                # Extract employee info
+                if "User ID" in line and "Name" in line:
+                    uid_part = line.split("User ID:")[-1]
+                    name_part = uid_part.split("Name:")
+                    id_value = name_part[0].strip() if len(name_part) > 0 else None
+
+                    if len(name_part) > 1:
+                        name_dept_part = name_part[1].split("Department:")
+                        name = name_dept_part[0].strip()
+                        dept = name_dept_part[1].strip() if len(name_dept_part) > 1 else "Unknown"
+                    else:
+                        name, dept = "Unknown", "Unknown"
+
+                    current_id, current_name, current_dept = id_value, name, dept
+                    continue
+
+                # Extract times
+                if ":" in line:
+                    times = line.split()
+                    time_in = times[0] if len(times) > 0 else None
+                    time_out = times[1] if len(times) > 1 else None
+
+                    day_value = attendance_date or datetime.now().date().isoformat()
+
+                    # Check if employee exists
+                    try:
+                        emp_id_int = int(float(current_id))
+                        emp_match = Employee.query.get(emp_id_int)
+                        matched = True if emp_match else False
+                    except:
+                        matched = False
+
+                    records.append({
+                        "Employee ID": current_id,
+                        "Name": current_name or "Unknown",
+                        "Department": current_dept or "Unknown",
+                        "Day": day_value,
+                        "Time In": time_in,
+                        "Time Out": time_out,
+                        "Matched": matched
+                    })
+
+            if not records:
+                flash("No valid attendance records found in file. Please check the format.", "danger")
+                return redirect(request.url)
+
+            session['officer_attendance_preview'] = records
+            preview_data = records
+            flash("Preview loaded. Please confirm import.", "info")
+
+        except Exception as e:
+            flash(f"Error reading Excel file: {e}", "danger")
+            return redirect(request.url)
+
+    return render_template('hr/officer/officer_import_attendance.html', preview=preview_data)
+
+
+# ----------------- CONFIRM IMPORT -----------------
+@hr_officer_bp.route('/attendance/confirm_bulk', methods=['POST'])
+@login_required
+@hr_officer_required
+def confirm_bulk_attendance():
+    records = session.get('officer_attendance_preview', [])
+    if not records:
+        flash("No attendance records to import.", "danger")
+        return redirect(url_for('officer.add_bulk_attendance'))
+
+    imported_count = 0
+
+    for row in records:
+        if not row.get("Matched"):
+            continue  # Only import matched employees
+
+        day = row.get("Day")
+        if not day or "Tabling" in str(day):
+            continue
+
+        # Handle date ranges
+        date_list = []
+        try:
+            if "~" in day:
+                start_str, end_str = day.split("~")
+                start_date = pd.to_datetime(start_str.strip(), errors='coerce').date()
+                end_date = pd.to_datetime(end_str.strip(), errors='coerce').date()
+                if start_date and end_date:
+                    date_list = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+            else:
+                single_date = pd.to_datetime(day.strip(), errors='coerce').date()
+                if single_date:
+                    date_list = [single_date]
+        except:
+            continue
+        if not date_list:
+            continue
+
+        emp_id = int(float(row.get("Employee ID")))
+        emp = Employee.query.get(emp_id)
+        if not emp:
+            continue
+
+        time_in = row.get("Time In")
+        time_out = row.get("Time Out")
+
+        for att_date in date_list:
+            existing = Attendance.query.filter_by(employee_id=emp.id, date=att_date).first()
+            if existing:
+                continue
+
+            time_in_obj = pd.to_datetime(time_in, errors='coerce').time() if time_in else None
+            time_out_obj = pd.to_datetime(time_out, errors='coerce').time() if time_out else None
+
+            new_att = Attendance(
+                employee_id=emp.id,
+                date=att_date,
+                time_in=time_in_obj,
+                time_out=time_out_obj,
+                status="Present" if time_in_obj else "Absent",
+                remarks=""
             )
-            db.session.add(attendance)
-            db.session.commit()
-            flash('Attendance recorded successfully!', 'success')
-            return redirect(url_for('hr_officer.attendance'))
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error adding attendance: {e}")
-            flash('Error recording attendance. Please try again.', 'error')
+            db.session.add(new_att)
+            imported_count += 1
 
-    return render_template('hr/officer/officer_add_attendance.html', form=form, title="Mark New Attendance")
+    db.session.commit()
+    session.pop('officer_attendance_preview', None)
+    flash(f"✅ Successfully imported {imported_count} attendance record(s).", "success")
+    return redirect(url_for('officer.add_bulk_attendance'))
 
 
-
-# --- EDIT ATTENDANCE ---
-@hr_officer_bp.route('/attendance/<int:attendance_id>/edit', methods=['GET', 'POST'])
-@login_required
-@hr_officer_required
-def edit_attendance(attendance_id):
-    attendance_record = Attendance.query.get_or_404(attendance_id)
-    form = AttendanceForm(obj=attendance_record) 
-    form.employee_id.choices = [(e.id, f"{e.employee_id} - {e.get_full_name()}") for e in Employee.query.filter_by(active=True).order_by(Employee.first_name).all()]
-
-    if form.validate_on_submit():
-        try:
-            attendance_record.employee_id = form.employee_id.data
-            attendance_record.date = form.date.data
-            attendance_record.time_in = form.time_in.data
-            attendance_record.time_out = form.time_out.data
-            attendance_record.status = form.status.data
-            attendance_record.remarks = form.remarks.data
-            attendance_record.updated_at = datetime.utcnow() 
-
-            db.session.commit()
-            flash('Attendance record updated successfully!', 'success')
-            return redirect(url_for('hr_officer.attendance'))
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating attendance record {attendance_id}: {e}")
-            flash('Error updating attendance record. Please try again.', 'error')
-
-    return render_template(
-        'hr/officer/officer_add_attendance.html', 
-        form=form,
-        title="Edit Attendance Record",
-        attendance_record=attendance_record 
-    )
-
-# --- DELETE ATTENDANCE ---
-@hr_officer_bp.route('/attendance/<int:attendance_id>/delete', methods=['POST'])
-@login_required
-@hr_officer_required
-def delete_attendance(attendance_id):
-    attendance_record = Attendance.query.get_or_404(attendance_id)
-    try:
-        db.session.delete(attendance_record)
-        db.session.commit()
-        flash('Attendance record deleted successfully!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error deleting attendance record {attendance_id}: {e}")
-        flash('Error deleting attendance record. Please try again.', 'error')
-    return redirect(url_for('hr_officer.attendance'))
 
 
 
@@ -290,21 +389,28 @@ def view_leaves():
     return render_template('hr/officer/officer_view_leaves.html', leaves=leaves, status_filter=status_filter)
 
 
-@hr_officer_bp.route('/leaves/<int:leave_id>/approve', methods=['POST'])
+# ----------------- OFFICER EDIT PASSWORD ROUTE -----------------
+@hr_officer_bp.route('/edit_password', methods=['GET', 'POST'])
 @login_required
 @hr_officer_required
-def approve_leave(leave_id):
-    leave = Leave.query.get_or_404(leave_id)
-    leave.status = request.form.get('status')
-    leave.comments = request.form.get('comments', '')
-    leave.approved_by = current_user.id
-    leave.approved_at = datetime.utcnow()
+def edit_password():
+    if request.method == 'POST':
+        new_password = request.form.get('password', '').strip()
+        if not new_password:
+            flash("⚠️ Password cannot be empty.", "warning")
+            return redirect(url_for('officer.edit_password'))
 
-    try:
-        db.session.commit()
-        flash(f'Leave request {leave.status.lower()} successfully!', 'success')
-    except Exception:
-        db.session.rollback()
-        flash('Error updating leave request.', 'error')
+        # Update password directly (or hash it if your User model supports it)
+        current_user.password = new_password
+        try:
+            db.session.commit()
+            flash("✅ Password successfully updated.", "success")
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating officer password: {e}")
+            flash("❌ Error updating password. Please try again.", "danger")
 
-    return redirect(url_for('hr_officer.leaves'))
+        return redirect(url_for('officer.edit_password'))
+
+    # GET request → show the form
+    return render_template('hr/officer/officer_edit_profile.html', user=current_user)

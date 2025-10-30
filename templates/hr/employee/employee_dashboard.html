@@ -1,0 +1,140 @@
+{% extends 'hr/employee/employee_base.html' %}
+{% block title %}Employee - Dashboard{% endblock %}
+
+{% block content %}
+<!-- Load Material Symbols font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Welcome, {{ current_user.get_full_name() }}</b></h1>
+    <p>
+      {{ employee.position.name if employee.position else 'No Position' }} | 
+      {{ employee.department.name if employee.department else 'No Department' }} Department
+    </p>
+  </header>
+
+  <div class="content">
+
+    <!-- Attendance Summary -->
+    <section class="info-boxes">
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined" style="font-size: 36px;">
+            task_alt
+          </span>
+        </div>
+        <div class="box-content">
+          <span class="big">{{ attendance_summary.present }}</span>
+          Present (This Month)
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined" style="font-size: 36px;">
+            cancel
+          </span>
+        </div>
+        <div class="box-content">
+          <span class="big">{{ attendance_summary.absent }}</span>
+          Absent (This Month)
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined" style="font-size: 36px;">
+            schedule
+          </span>
+        </div>
+        <div class="box-content">
+          <span class="big">{{ attendance_summary.late }}</span>
+          Late (This Month)
+        </div>
+      </div>
+    </section>
+
+    <!-- Leave Balances -->
+    <section class="info-boxes" style="margin-top: 20px;">
+      {% for leave_type, balance in leave_balances.items() %}
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined" style="font-size: 36px;">
+            spa
+          </span>
+        </div>
+        <div class="box-content">
+          <span class="big">{{ balance }}</span>
+          {{ leave_type }} Leave
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- Attendance Chart -->
+    <div class="chart-container" style="margin-top: 30px;">
+      <canvas id="monthlyAttendanceChart"></canvas>
+    </div>
+
+    <!-- Recent Leaves Table -->
+    <div class="recent-leaves" style="margin-top: 40px;">
+      <h2>Recent Leave Requests</h2>
+      {% if recent_leaves %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Days</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leave in recent_leaves %}
+          <tr>
+            <td>{{ leave.leave_type }}</td>
+            <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ leave.days_requested }}</td>
+            <td>{{ leave.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No recent leave requests.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyDates = {{ attendance_chart.dates | tojson }};
+    const monthlyPresentCounts = {{ attendance_chart.present | tojson }};
+    const monthlyAbsentCounts = {{ attendance_chart.absent | tojson }};
+    const monthlyLateCounts = {{ attendance_chart.late | tojson }};
+
+    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: monthlyDates,
+            datasets: [
+                { label: 'Present', data: monthlyPresentCounts, borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)', fill: true, tension: 0.3 },
+                { label: 'Absent', data: monthlyAbsentCounts, borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', fill: true, tension: 0.3 },
+                { label: 'Late', data: monthlyLateCounts, borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)', fill: true, tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Monthly Attendance Overview' } }
+        }
+    });
+});
+</script>
+{% endblock %}

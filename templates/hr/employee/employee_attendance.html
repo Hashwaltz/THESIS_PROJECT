@@ -1,0 +1,115 @@
+{% extends 'hr/employee/employee_base.html' %} 
+{% block title %}Employee - Attendance Records{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>Attendance Records</h1>
+    <p>
+      <b>Summary:</b>
+      Present: {{ summary.present }} |
+      Absent: {{ summary.absent }} |
+      Late: {{ summary.late }} |
+      Half Day: {{ summary.half_day }}
+    </p>
+  </header>
+
+  <!-- Filter Form -->
+  <div class="search-box">
+    <form method="get" class="filter-form" id="filterForm">
+      <div class="fields">
+        <!-- Start Date -->
+        <div class="input-field">
+          <label>Start Date</label>
+          <input type="date" name="start_date" value="{{ start_date_filter }}">
+        </div>
+
+        <!-- End Date -->
+        <div class="input-field">
+          <label>End Date</label>
+          <input type="date" name="end_date" value="{{ end_date_filter }}">
+        </div>
+
+        <!-- Status -->
+        <div class="input-field">
+          <label>Status</label>
+          <select name="status_filter" id="statusFilter">
+            <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+            <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
+            <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
+            <option value="Late" {% if status_filter=='Late' %}selected{% endif %}>Late</option>
+          </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="input-field" style="flex-direction: row; gap: 10px;">
+          <label>&nbsp;</label>
+          <button type="submit" class="submit">
+            <span class="btnText">Filter</span>
+            <i class="uil uil-filter"></i>
+          </button>
+          <!-- Reset Button -->
+          <button type="button" class="submit" onclick="window.location='{{ url_for('employee.attendance') }}'">
+            <span class="btnText">Reset</span>
+            <i class="uil uil-redo"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Attendance Table -->
+  <div class="table-container">
+    <table class="responsive-table">
+      <caption><b>Attendance List</b></caption>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att in attendances.items %}
+        <tr>
+          <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
+          <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
+          <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
+          <td data-label="Status" style="color: 
+              {% if att.status == 'Present' %}green
+              {% elif att.status == 'Late' %}orange
+              {% else %}red{% endif %};">
+            {{ att.status }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      {% if attendances.has_prev %}
+        <a href="{{ url_for('employee.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}">Previous</a>
+      {% endif %}
+
+      Page {{ attendances.page }} of {{ attendances.pages }}
+
+      {% if attendances.has_next %}
+        <a href="{{ url_for('employee.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</main>
+
+<!-- Auto-submit JS for status -->
+<script>
+  document.getElementById('statusFilter').addEventListener('change', function() {
+      document.getElementById('filterForm').submit();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Attendance{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>Attendance Records</h1>
+  </header>
+
+  <!-- Filter Form -->
+  <div class="search-box">
+    <form method="get" class="filter-form">
+      <div class="fields">
+        <div class="input-field">
+          <label>Start Date</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        </div>
+        <div class="input-field">
+          <label>End Date</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        </div>
+        <div class="input-field">
+          <label>Employee</label>
+          <select id="employee" name="employee">
+            <option value="">All</option>
+            {% for emp in employees %}
+              <option value="{{ emp.id }}" {% if employee_filter == emp.id|string %}selected{% endif %}>
+                {{ emp.get_full_name() }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="input-field">
+          <label>Department</label>
+          <select id="department" name="department">
+            <option value="">All</option>
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if department_filter == dept.id|string %}selected{% endif %}>
+                {{ dept.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="input-field">
+          <label>&nbsp;</label>
+          <button type="submit" class="submit" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 20px;">filter_list</span>
+            <span class="btnText">Filter</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Attendance Table -->
+  <div class="table-container">
+    <table class="responsive-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Department</th>
+          <th>Date</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+          <th>Working Hours</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attendance in attendances.items %}
+        <tr>
+          <td>{{ attendance.employee.get_full_name() }}</td>
+          <td>{{ attendance.employee.department.name if attendance.employee.department else '-' }}</td>
+          <td>{{ attendance.date }}</td>
+          <td>{{ attendance.time_in or '-' }}</td>
+          <td>{{ attendance.time_out or '-' }}</td>
+          <td>{{ '%.2f'|format(attendance.working_hours) }}</td>
+          <td>
+            {% if attendance.status == 'Late' %}
+              <span style="color: orange; font-weight: bold;">Late</span>
+            {% elif attendance.status == 'Present' %}
+              <span style="color: green; font-weight: bold;">Present</span>
+            {%elif attendance.status == 'Absent' %}
+            <span style="color: red; font-weight: bold;">Absent</span>
+            {% else %}
+              {{ attendance.status }}
+            {% endif %}
+          </td>
+          <td>
+            <!-- Navigate to full-page edit -->
+            <a href="{{ url_for('hr_admin.edit_attendance', attendance_id=attendance.id) }}" class="btn-action">
+              Edit
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" style="margin-top: 15px;">
+      {% if attendances.has_prev %}
+        <a href="{{ url_for('hr_admin.attendance', page=attendances.prev_num, start_date=start_date, end_date=end_date, employee=employee_filter, department=department_filter) }}">Previous</a>
+      {% endif %}
+      Page {{ attendances.page }} of {{ attendances.pages }}
+      {% if attendances.has_next %}
+        <a href="{{ url_for('hr_admin.attendance', page=attendances.next_num, start_date=start_date, end_date=end_date, employee=employee_filter, department=department_filter) }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</main>
+{% endblock %}
+  

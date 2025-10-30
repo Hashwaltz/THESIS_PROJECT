@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}HR Head{% endblock %}</title>
+
+    <!-- Font Awesome (optional) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+
+    <!-- Material Symbols (Google Icons) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+
+    <!-- Normalizer -->
+    <link
+      rel="stylesheet"
+      href="https://public.codepenassets.com/css/normalize-5.0.0.min.css"
+    />
+    <link rel="canonical" href="https://codepen.io/blex/pen/VBGNxq" />
+
+    <!-- Custom Styles -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('dept_head.static', filename='css/style2.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('dept_head.static', filename='css/forms.css') }}"
+    />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('dept_head.static', filename='img/favicon.avif') }}"
+    />
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+      window.console = window.console || function (t) {};
+    </script>
+  </head>
+
+  <body>
+    <div class="dashboard">
+      <!-- =============================
+           SIDEBAR HEADER
+      ============================== -->
+      <aside class="search-wrap">
+        <div
+          class="search"
+          style="display: flex; align-items: center; gap: 10px"
+        >
+          <label>
+            <img
+              src="{{ url_for('dept_head.static', filename='img/logo2.avif') }}"
+              alt="Logo"
+              width="60"
+              height="60"
+              class="logo"
+              style="border-radius: 50%"
+            />
+            <h2 style="color: #ced4da; margin: 4px">GovHRPay HR System</h2>
+          </label>
+        </div>
+
+        <!-- =============================
+             USER ACTIONS
+        ============================== -->
+        <div class="user-actions">
+          <!-- Logout Button -->
+          <button
+            id="logoutBtn"
+            type="button"
+            title="Logout"
+            style="background: none; border: none; cursor: pointer"
+          >
+            <span style="color: #fff" class="material-symbols-outlined">
+              logout
+            </span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- =============================
+           MAIN MENU
+      ============================== -->
+      <header class="menu-wrap">
+        <figure class="user">
+          <div class="user-avatar">
+            <img
+              src="{{ url_for('dept_head.static', filename='images/user/user_logo.webp') }}"
+              alt="User Profile"
+            />
+          </div>
+          <figcaption>
+            {{ current_user.first_name }} {{ current_user.last_name }}
+          </figcaption>
+        </figure>
+
+        <nav>
+          <section class="dicover">
+            <h3>Employee and User Management</h3>
+            <ul>
+              <li>
+                <a href="{{ url_for('dept_head.dashboard') }}">
+                  <span class="material-symbols-outlined">dashboard</span>
+                  Dashboard
+                </a>
+              </li>
+              <li>
+                <a href="{{ url_for('dept_head.employees') }}">
+                  <span class="material-symbols-outlined">patient_list</span>
+                  Employees Records
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="tools">
+            <h3>Attendance Management</h3>
+            <ul>
+              <li>
+                <a href="{{ url_for('dept_head.attendance') }}">
+                  <span class="material-symbols-outlined">overview</span>
+                  Attendance Records
+                </a>
+              </li>
+              <li>
+                <a href="#">
+                  <span class="material-symbols-outlined">add_circle</span>
+                  Add Attendance
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="dicover">
+            <h3>Leave Management</h3>
+            <ul>
+              <li>
+                <a href="{{url_for('dept_head.leaves')}}">
+                  <span class="material-symbols-outlined">files</span>
+                  Review All Leaves
+                </a>
+              </li>
+            </ul>
+          </section>
+
+           <section class="dicover">
+            <h3>Profile Management</h3>
+            <ul>
+              <li>
+                <a href="{{ url_for('dept_head.edit_password') }}">
+                  <span class="material-symbols-outlined">
+                  manage_accounts
+                  </span>
+                  Profile Settings
+                </a>
+              </li>
+            </ul>
+          </section>
+        </nav>
+      </header>
+
+      <!-- =============================
+           MAIN CONTENT AREA
+      ============================== -->
+      <main class="content-wrap">{% block content %}{% endblock %}</main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SweetAlert2 Logout Confirmation -->
+    <script>
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", function () {
+          Swal.fire({
+            title: "Are you sure?",
+            text: "You will be logged out of your account.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, logout",
+            cancelButtonText: "Cancel",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = "{{ url_for('hr_auth.logout') }}";
+            }
+          });
+        });
+    </script>
+  </body>
+</html>

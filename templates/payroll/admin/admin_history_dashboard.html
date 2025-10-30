@@ -1,0 +1,70 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Payroll History Dashboard{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Payroll History Dashboard</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+
+      <!-- Employees Table -->
+      <h2>Employees</h2>
+      <table class="responsive-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for emp in employees %}
+          <tr>
+            <td>{{ emp.id }}</td>
+            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>
+              <a href="{{ url_for('payroll_admin.view_employee_payroll_history', employee_id=emp.id) }}" class="btn-action">View Payroll</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">No employees found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Payroll Periods Table -->
+      <h2 style="margin-top: 2rem;">Payroll Periods</h2>
+      <table class="responsive-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Period Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for period in periods %}
+          <tr>
+            <td>{{ period.id }}</td>
+            <td>{{ period.period_name }}</td>
+            <td>{{ period.start_date.strftime('%b %d, %Y') }}</td>
+            <td>{{ period.end_date.strftime('%b %d, %Y') }}</td>
+            <td>
+              <a href="{{ url_for('payroll_admin.payroll_period_history', period_id=period.id) }}" class="btn-action">View Payroll</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No payroll periods found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}HR Admin{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Icons+Rounded"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Icons+Two+Tone"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://public.codepenassets.com/css/normalize-5.0.0.min.css"
+    />
+    <link rel="canonical" href="https://codepen.io/blex/pen/VBGNxq" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('hr_admin.static', filename='css/style2.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('hr_admin.static', filename='css/forms.css') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('hr_admin.static', filename='img/favicon.avif') }}"
+    />
+    <script>
+      window.console = window.console || function (t) {};
+    </script>
+  </head>
+  <body>
+    <div class="dashboard">
+      <aside class="search-wrap">
+        <div
+          class="search"
+          style="display: flex; align-items: center; gap: 10px"
+        >
+          <label>
+            <img
+              src="{{ url_for('hr_admin.static', filename='img/logo2.avif') }}"
+              alt="Logo"
+              width="60"
+              height="60"
+              class="logo"
+              style="border-radius: 50%"
+            />
+            <h2 style="color: #ced4da; margin: 4px">GovHRPay HR System</h2>
+          </label>
+        </div>
+
+        <div class="user-actions">
+          <button
+            type="button"
+            id="logoutBtn"
+            title="Logout"
+            style="background: none; border: none; cursor: pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path d="M16 13v-2H7V8l-5 4 5 4v-3z"></path>
+              <path
+                d="M20 3H10v2h10v14H10v2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <header class="menu-wrap">
+        <figure class="user">
+          <div class="user-avatar">
+            <img
+              src="{{ url_for('hr_admin.static', filename='images/user/user_logo.webp') }}"
+              alt="User Profile"
+            />
+          </div>
+          <figcaption>
+            {{ current_user.first_name }} {{current_user.last_name}}
+          </figcaption>
+        </figure>
+
+        <nav>
+          <section class="dicover">
+            <h3>Employee and User Management</h3>
+
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.hr_dashboard') }}">
+                  <span class="material-symbols-outlined"> dashboard </span>
+                  Dashboard
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.view_employees') }}">
+                  <span class="material-symbols-outlined">
+                    assignment_ind
+                  </span>
+                  Employee Management
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.view_users')}}">
+                  <span class="material-symbols-outlined"> group </span>
+                   User Management
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="tools">
+            <h3>Attendance Management</h3>
+
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.attendance') }}">
+                 <span class="material-symbols-outlined">
+                  table
+                  </span>
+                  View Attendance
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.add_attendance') }}">
+                  <span class="material-symbols-outlined">
+                  punch_clock
+                  </span>
+                  Add Attendance
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="dicover">
+            <h3>Leave Management</h3>
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.view_leaves') }}">
+                  <span class="material-symbols-outlined">
+                  file_copy
+                  </span>
+                  View All Leaves
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.review_leaves') }}">
+                  <span class="material-symbols-outlined">
+                  approval_delegation
+                  </span>
+                  Approve/Deny Leaves
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="tools">
+            <h3>Department Management</h3>
+
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.view_departments') }}">
+                  <span class="material-symbols-outlined">
+                    apartment
+                    </span>
+                  View Departments
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.add_department') }}">
+                  <span class="material-symbols-outlined">
+                  add_home_work
+                  </span> 
+                  </svg>
+                  Add New Department
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="dicover">
+            <h3>Reports</h3>
+            <ul>
+              <li>
+                <a
+                  href="{{ url_for('hr_admin.attendance_reports') }}"
+                >
+                  <span class="material-symbols-outlined">
+                    analytics
+                    </span>
+                  Attencdance Reports
+                </a>
+              </li>
+
+              <li>
+                <a
+                  href="{{ url_for('hr_admin.leave_reports') }}"
+                >
+                  <span class="material-symbols-outlined">
+                    analytics
+                    </span>
+                  Leave Reports
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="dicover">
+            <h3>Settings</h3>
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.edit_password') }}">
+                  <span class="material-symbols-outlined">
+                    manage_accounts
+                    </span>
+                  Account Settings
+                </a>
+              </li>
+            </ul>
+          </section>
+        </nav>
+      </header>
+      <main class="content-wrap">{% block content %}{% endblock %}</main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        logoutBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+
+          Swal.fire({
+            title: "Are you sure?",
+            text: "You will be logged out and might need to login again!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, logout!",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = "{{ url_for('hr_auth.logout') }}";
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

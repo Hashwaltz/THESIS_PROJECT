@@ -1,0 +1,87 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Manage {{ benefit_type|capitalize }}{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Manage {{ benefit_type|capitalize }} for {{ employee.first_name }} {{ employee.last_name }}</b></h1>
+  </header>
+
+  <div class="table-container">
+    <form method="POST">
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Amount / Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in all_items %}
+          <tr>
+            <td data-label="Select">
+              <input
+                type="checkbox"
+                name="selected_items"
+                value="{{ item.id }}"
+                {% if item.id in selected_items %}checked{% endif %}
+              >
+            </td>
+            <td data-label="Name">{{ item.name }}</td>
+            <td data-label="Description">{{ item.description or '-' }}</td>
+            <td data-label="Amount / Percentage">
+              {% if item.amount %}
+                ₱{{ "%.2f"|format(item.amount) }}
+              {% elif item.percentage %}
+                {{ item.percentage }}%
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="action-buttons" style="margin-top: 20px; text-align: center;">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <a href="{{ url_for('payroll_admin.list_employee_benefits') }}" class="btn-action">⬅ Back</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- SweetAlert Flash + Redirect -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Show backend flash messages (errors)
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        Swal.fire({
+          icon: "{{ 'success' if category == 'success' else 'error' if category == 'danger' else 'info' }}",
+          title: "{{ message }}",
+          showConfirmButton: false,
+          timer: 2000
+        });
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  // Show success message and redirect
+  {% if success_message %}
+    Swal.fire({
+      icon: 'success',
+      title: '{{ success_message }}',
+      showConfirmButton: false,
+      timer: 1800
+    }).then(() => {
+      window.location.href = "{{ url_for('payroll_admin.list_employee_benefits') }}";
+    });
+  {% endif %}
+});
+</script>
+{% endblock %}

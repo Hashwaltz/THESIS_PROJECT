@@ -1,0 +1,165 @@
+{% extends 'hr/admin/admin_base.html' %} 
+{% block title %}HR Admin-Employees{% endblock %} 
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Records</b></h1>
+  </header>
+
+  <!-- Search + Department Filter -->
+  <div class="searching">
+    <form
+      method="get"
+      action="{{ url_for('hr_admin.view_employees') }}"
+      class="search-form"
+      id="employeeFilterForm"
+    >
+      <div class="fields" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <!-- Search input -->
+        <div class="input-field">
+          <input
+            type="text"
+            name="search"
+            value="{{ search }}"
+            placeholder="Search employees..."
+          />
+          <button
+            type="submit"
+            style="display: flex; align-items: center; gap: 6px"
+          >
+            <span class="material-symbols-outlined" style="font-size: 30px">
+              person_search
+            </span>
+            Search
+          </button>
+        </div>
+
+        <!-- Department filter -->
+        <div class="input-field">
+          <select name="department_id" id="departmentSelect">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
+              {{ dept.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Employee Table -->
+  <div class="table-container">
+    <div class="centered-container">
+      <!-- Buttons aligned to right -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;">
+        <a
+          href="{{ url_for('hr_admin.add_employee') }}"
+          style="display: flex; align-items: center; gap: 6px; text-decoration: none; background: #28a745; color: white; padding: 6px 12px; border-radius: 5px;"
+        >
+          <span class="material-symbols-outlined" style="font-size: 30px">person_add</span>
+          Add Employee
+        </a>
+
+        <a
+          href="{{ url_for('hr_admin.export_employees_excel') }}"
+          style="display: flex; align-items: center; gap: 6px; text-decoration: none; background: #007bff; color: white; padding: 6px 12px; border-radius: 5px;"
+        >
+          <span class="material-symbols-outlined" style="font-size: 30px">print</span>
+          Export Employees (Excel)
+        </a>
+      </div>
+
+      <table class="responsive-table">
+        <caption>
+          <b>Employee List</b>
+        </caption>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Date Hired</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in employees.items %}
+          <tr>
+            <td data-label="Employee ID">{{ employee.id }}</td>
+            <td data-label="Full Name">{{ employee.get_full_name() }}</td>
+            <td data-label="Email">{{ employee.email }}</td>
+            <td data-label="Phone">{{ employee.phone or '-' }}</td>
+            <td data-label="Department">
+              {{ employee.department.name if employee.department else '-' }}
+            </td>
+            <td data-label="Position">
+              {{ employee.position.name if employee.position else '-' }}
+            </td>
+            <td data-label="Date Hired">
+              {{ employee.updated_at.strftime('%Y-%m-%d') if employee.updated_at else '-' }}
+            </td>
+            <td data-label="Status">
+              <span style="color: {{ 'green' if employee.active else 'red' }};">
+                {{ 'Active' if employee.active else 'Inactive' }}
+              </span>
+            </td>
+            <td data-label="Actions">
+              <a
+                href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}"
+                class="btn-action"
+              >
+                View | Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8">No employees found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 1rem; text-align: center">
+        {% if employees.has_prev %}
+        <a
+          href="{{ url_for('hr_admin.view_employees', page=employees.prev_num, search=search, department_id=selected_department) }}"
+        >
+          Previous
+        </a>
+        {% endif %}
+
+        Page {{ employees.page }} of {{ employees.pages }}
+
+        {% if employees.has_next %}
+        <a
+          href="{{ url_for('hr_admin.view_employees', page=employees.next_num, search=search, department_id=selected_department) }}"
+        >
+          Next
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Auto-submit department filter
+    const departmentSelect = document.getElementById("departmentSelect");
+    const filterForm = document.getElementById("employeeFilterForm");
+    departmentSelect.addEventListener("change", () => {
+      filterForm.submit();
+    });
+  });
+</script>
+
+{% endblock %}

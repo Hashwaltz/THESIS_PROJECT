@@ -1,0 +1,88 @@
+{% extends 'hr/employee/employee_base.html' %}
+
+{% block title %}Request Leave{% endblock %}
+
+{% block content %}
+<div class="department-container">
+  <header>Request Leave</header>
+
+  <form id="leaveForm" method="POST">
+    <div class="fields">
+      <!-- Leave Type -->
+      <div class="input-field">
+        <label for="leave_type">Leave Type</label>
+        <select name="leave_type" id="leave_type" required>
+          <option value="">Select Leave Type</option>
+          {% for lt in leave_types %}
+          <option value="{{ lt.id }}">{{ lt.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Start Date -->
+      <div class="input-field">
+        <label for="start_date">Start Date</label>
+        <input type="date" name="start_date" id="start_date" required>
+      </div>
+
+      <!-- End Date -->
+      <div class="input-field">
+        <label for="end_date">End Date</label>
+        <input type="date" name="end_date" id="end_date" required>
+      </div>
+
+      <!-- Reason -->
+      <div class="input-field" style="width:100%;">
+        <label for="reason">Reason</label>
+        <textarea name="reason" id="reason" rows="4" placeholder="Enter reason..." required></textarea>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="buttons">
+      <button type="submit" id="submitBtn">
+        <span class="btnText">Submit Leave</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  const leaveForm = document.getElementById('leaveForm');
+  const submitBtn = document.getElementById('submitBtn');
+
+  leaveForm.addEventListener('submit', function(e) {
+    e.preventDefault(); // Stop default form submission
+
+    Swal.fire({
+      title: 'Submit Leave Request?',
+      text: "Are you sure you want to submit this leave request?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#4070f4',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, submit it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        leaveForm.submit(); // Submit the form if confirmed
+      }
+    });
+  });
+
+  // Flash messages
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      Swal.fire({
+        icon: '{{ "success" if category=="success" else "error" }}',
+        title: msg,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    {% endfor %}
+  {% endwith %}
+</script>
+{% endblock %}
