@@ -11,19 +11,50 @@
   <div class="filter-container searching">
     <form method="get" id="attendanceFilterForm">
       <div class="fields">
+
+        <!-- Department Filter -->
         <div class="input-field">
-          <input type="date" id="date_filter" name="date" value="{{ date_filter }}">
+          <select id="department_filter" name="department">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if dept.id|string == department_filter %}selected{% endif %}>
+                {{ dept.name }}
+              </option>
+            {% endfor %}
+          </select>
         </div>
 
+        <!-- Employee Filter -->
         <div class="input-field">
           <select id="employee_filter" name="employee">
-            <option value="">Search by Employee</option>
+            <option value="">All Employees</option>
             {% for emp in employees %}
               <option value="{{ emp.id }}" {% if emp.id|string == employee_filter %}selected{% endif %}>
                 {{ emp.get_full_name() }}
               </option>
             {% endfor %}
           </select>
+        </div>
+
+        <!-- Start and End Date Filters -->
+        <div class="input-field">
+          <label style="margin-top: 20px;">Start Date</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        </div>
+
+        <div class="input-field">
+          <label style="margin-top: 20px;">End Date</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        </div>
+
+        <!-- Submit Button -->
+        <div class="input-field">
+          <button type="submit" class="printing">
+            <span class="material-symbols-outlined">
+                database_search
+            </span>
+            Filter
+          </button>
         </div>
       </div>
     </form>
@@ -35,20 +66,19 @@
       <caption><b>Attendance Records</b></caption>
       <thead>
         <tr>
-          <th>Employee ID</th>
           <th>Full Name</th>
+          <th>Department</th>
           <th>Date</th>
           <th>Time In</th>
           <th>Time Out</th>
           <th>Status</th>
-          <th>Remarks</th>
         </tr>
       </thead>
       <tbody>
         {% for att in attendances.items %}
         <tr>
-          <td data-label="Employee ID">{{ att.employee.employee_id }}</td>
           <td data-label="Full Name">{{ att.employee.get_full_name() }}</td>
+          <td data-label="Department">{{ att.employee.department.name if att.employee.department else '-' }}</td>
           <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
           <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '-' }}</td>
           <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '-' }}</td>
@@ -57,7 +87,6 @@
               {{ att.status }}
             </span>
           </td>
-          <td data-label="Remarks">{{ att.remarks or '-' }}</td>
         </tr>
         {% else %}
         <tr>
@@ -70,11 +99,11 @@
     <!-- Pagination -->
     <div class="pagination">
       {% if attendances.has_prev %}
-        <a href="{{ url_for('officer.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}">Previous</a>
+        <a href="{{ url_for('officer.attendance', page=attendances.prev_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}">Previous</a>
       {% endif %}
       <span class="page-info">Page {{ attendances.page }} of {{ attendances.pages }}</span>
       {% if attendances.has_next %}
-        <a href="{{ url_for('officer.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}">Next</a>
+        <a href="{{ url_for('officer.attendance', page=attendances.next_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}">Next</a>
       {% endif %}
     </div>
   </div>
@@ -89,19 +118,16 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const form = document.getElementById('attendanceFilterForm');
-    const employeeSelect = document.getElementById('employee_filter');
-    const dateInput = document.getElementById('date_filter');
+  const form = document.getElementById('attendanceFilterForm');
+  const employeeSelect = document.getElementById('employee_filter');
+  const deptSelect = document.getElementById('department_filter');
+  const startDate = document.getElementById('start_date');
+  const endDate = document.getElementById('end_date');
 
-    // Auto-submit when employee changes
-    employeeSelect.addEventListener('change', function() {
-        form.submit();
-    });
-
-    // Auto-submit when date changes
-    dateInput.addEventListener('change', function() {
-        form.submit();
-    });
+  // Auto-submit when filters change
+  [employeeSelect, deptSelect, startDate, endDate].forEach(input => {
+    input.addEventListener('change', () => form.submit());
+  });
 });
 </script>
 {% endblock %}

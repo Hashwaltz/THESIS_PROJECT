@@ -135,7 +135,7 @@
               <li>
                 <a href="{{ url_for('hr_admin.view_users')}}">
                   <span class="material-symbols-outlined"> group </span>
-                   User Management
+                   Account Management
                 </a>
               </li>
             </ul>
@@ -173,7 +173,7 @@
                   <span class="material-symbols-outlined">
                   file_copy
                   </span>
-                  View All Leaves
+                  View Leaves
                 </a>
               </li>
 
@@ -182,7 +182,7 @@
                   <span class="material-symbols-outlined">
                   approval_delegation
                   </span>
-                  Approve/Deny Leaves
+                  Approve/Reject Leaves
                 </a>
               </li>
             </ul>
@@ -212,6 +212,32 @@
               </li>
             </ul>
           </section>
+
+
+            <section class="tools">
+            <h3>Position Management</h3>
+
+            <ul>
+              <li>
+                <a href="{{ url_for('hr_admin.view_positions') }}">
+                  <span class="material-symbols-outlined">
+                    assignment_ind
+                    </span>
+                  View Positions
+                </a>
+              </li>
+
+              <li>
+                <a href="{{ url_for('hr_admin.add_position') }}">
+                  <span class="material-symbols-outlined">
+                    group_add
+                  </span> 
+                  Add New Position
+                </a>
+              </li>
+            </ul>
+          </section>
+
 
           <section class="dicover">
             <h3>Reports</h3>

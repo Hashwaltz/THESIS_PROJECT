@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department, Position, LeaveType
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position, LeaveType, EmploymentType
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm, DepartmentForm
 from ..utils import admin_required, generate_employee_id, get_attendance_summary, get_current_month_range, load_excel_to_df, unlock_xlsx
 from .. import db
@@ -27,9 +27,21 @@ import pandas as pd
 import re
 import numpy as np
 import uuid
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, case, cast, Date
 import json
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib.pagesizes import LETTER
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+pdfmetrics.registerFont(UnicodeCIDFont('HYSMyeongJo-Medium'))  # For Filipino/Unicode chars
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR = os.path.join(BASE_DIR, "hr_static")
@@ -99,6 +111,9 @@ def hr_dashboard():
         dept_counts=dept_counts,
         total_inactive=total_inactive
     )
+
+
+
 # ------------------------- Employees -------------------------
 @hr_admin_bp.route('/employees')
 @login_required
@@ -106,12 +121,14 @@ def hr_dashboard():
 def view_employees():
     search = request.args.get('search', '')
     department_id = request.args.get('department_id', '')
+    employment_type_id = request.args.get('employment_type_id', '')  # ✅ new filter
     page = request.args.get('page', 1, type=int)
 
     # Base query with joins
     query = Employee.query.options(
         joinedload(Employee.department),
-        joinedload(Employee.position)
+        joinedload(Employee.position),
+        joinedload(Employee.employment_type)  # ✅ include employment type join
     )
 
     # Apply search filter
@@ -126,21 +143,28 @@ def view_employees():
     if department_id:
         query = query.filter(Employee.department_id == int(department_id))
 
-    # Order employees alphabetically by last name (ascending)
+    # ✅ Apply employment type filter
+    if employment_type_id:
+        query = query.filter(Employee.employment_type_id == int(employment_type_id))
+
+    # Order employees alphabetically
     query = query.order_by(Employee.last_name.asc(), Employee.first_name.asc())
 
-    # Paginate employees
+    # Paginate
     employees = query.paginate(page=page, per_page=10)
 
-    # Fetch all departments for filter dropdown, sorted alphabetically
+    # Fetch all filter dropdown data
     departments = Department.query.order_by(Department.name.asc()).all()
+    employment_types = EmploymentType.query.order_by(EmploymentType.name.asc()).all() 
 
     return render_template(
         'hr/admin/admin_view_employees.html',
         employees=employees,
         search=search,
         departments=departments,
-        selected_department=department_id
+        employment_types=employment_types,  
+        selected_department=department_id,
+        selected_employment_type=employment_type_id 
     )
 
 
@@ -194,13 +218,13 @@ def add_employee():
                 address=request.form['address'],
                 department_id=department_id,
                 position_id=request.form['position'],
+                employment_type_id=request.form['employment_type_id'],  # ✅ Added
                 salary=salary,
                 date_hired=date_hired,
                 date_of_birth=date_of_birth,
                 gender=request.form['gender'],
                 marital_status=request.form['marital_status'],
                 emergency_contact=request.form['emergency_contact'],
-                emergency_phone=request.form['emergency_phone'],
                 active=True
             )
             db.session.add(employee)
@@ -221,11 +245,14 @@ def add_employee():
     # GET request: render form
     departments = Department.query.all()
     positions = Position.query.all()
+    employment_types = EmploymentType.query.all()  # ✅ Include for dropdown
     return render_template(
         'hr/admin/admin_add.html',
         departments=departments,
-        positions=positions
+        positions=positions,
+        employment_types=employment_types
     )
+
 
 
 @hr_admin_bp.route('/employees/export')
@@ -279,59 +306,180 @@ def export_employees_excel():
 
 
 
+
+@hr_admin_bp.route("/employees/<int:employee_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_employee(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    positions = Position.query.all()
+    departments = Department.query.all()
+    employment_types = EmploymentType.query.all()  # ✅ fetch employment types
+
+    if request.method == "POST":
+        try:
+            employee.first_name = request.form.get("first_name")
+            employee.last_name = request.form.get("last_name")
+            employee.middle_name = request.form.get("middle_name")
+            employee.email = request.form.get("email")
+            employee.phone = request.form.get("phone")
+            employee.address = request.form.get("address")
+
+            dept_id = request.form.get("department")
+            pos_id = request.form.get("position")
+            emp_type_id = request.form.get("employment_type_id")  # ✅ new field
+
+            employee.department_id = int(dept_id) if dept_id else None
+            employee.position_id = int(pos_id) if pos_id else None
+            employee.employment_type_id = int(emp_type_id) if emp_type_id else None  # ✅ assign relationship
+
+            salary_val = request.form.get("salary")
+            employee.salary = float(salary_val) if salary_val else None
+
+            def parse_date(date_str):
+                try:
+                    return datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
+                except ValueError:
+                    return None
+
+            employee.date_hired = parse_date(request.form.get("date_hired"))
+            employee.date_of_birth = parse_date(request.form.get("date_of_birth"))
+            employee.gender = request.form.get("gender")
+            employee.marital_status = request.form.get("marital_status")
+            employee.emergency_contact = request.form.get("emergency_contact")
+
+            status_val = request.form.get("status")
+            employee.active = True if status_val == "1" else False
+
+            employee.updated_at = datetime.utcnow()
+            db.session.commit()
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return {"status": "success", "message": "Employee updated successfully!"}, 200
+
+            flash("Employee updated successfully!", "success")
+            return redirect(url_for("hr_admin.view_employees"))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating employee {employee_id}: {e}")
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return {"status": "error", "message": "Error updating employee. Please try again."}, 500
+
+            flash("Error updating employee. Please try again.", "error")
+
+    return render_template(
+        "hr/admin/admin_edit.html",
+        employee=employee,
+        positions=positions,
+        departments=departments,
+        employment_types=employment_types,  # ✅ pass to template
+    )
+
+
+
+
 @hr_admin_bp.route('/employees/<int:employee_id>/service_record')
 @login_required
 @admin_required
 def export_service_record(employee_id):
     employee = Employee.query.get_or_404(employee_id)
 
-    # Create document
+    # Create Word document
     doc = Document()
 
-    # Header
-    doc.add_paragraph("Republic of the Philippines")
-    doc.add_paragraph("NORZAGARAY, REGION 3").bold = True
-    para = doc.add_paragraph("SERVICE RECORD")
-    para.alignment = 1  # Center text
+    # ==============================
+    # HEADER SECTION
+    # ==============================
+    title = doc.add_paragraph("S E R V I C E   R E C O R D")
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title.runs[0].bold = True
+    title.runs[0].font.size = Pt(14)
 
-    # Employee info
-    doc.add_paragraph(f"Name: {employee.last_name}, {employee.first_name} {employee.middle_name or ''}")
-    doc.add_paragraph(f"Date and place of birth: {employee.date_of_birth.strftime('%B %d, %Y') if employee.date_of_birth else ''}")
+    para1 = doc.add_paragraph("Republic of the Philippines")
+    para1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para1.runs[0].font.size = Pt(11)
+
+    para2 = doc.add_paragraph("NORZAGARAY, REGION 3")
+    para2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para2.runs[0].bold = True
+    para2.runs[0].font.size = Pt(11)
+
+    doc.add_paragraph("")  # spacing
+
+    # ==============================
+    # EMPLOYEE INFORMATION
+    # ==============================
+    doc.add_paragraph(f"Name : {employee.last_name.upper()}, {employee.first_name.upper()} {employee.middle_name or ''}")
+    birth_date = employee.date_of_birth.strftime('%B %d, %Y') if employee.date_of_birth else ''
+    doc.add_paragraph(f"Date and place of birth : {birth_date}")
+    doc.add_paragraph("(If married woman, give full maiden name)")
+    doc.add_paragraph("(Date herein should be checked from birth or baptismal certificate or some other reliable documents)")
     doc.add_paragraph("B.P. Number: __________     TIN #: __________")
+    doc.add_paragraph("")  # spacing
 
-    doc.add_paragraph(
+    # ==============================
+    # CERTIFICATION STATEMENT
+    # ==============================
+    cert_text = (
         "This is to certify that the employee named hereunder actually rendered services "
         "in this Office as shown by the service record below, each line of which is supported "
-        "by appointment and other papers actually issued by this Office and approved by the authorities concerned."
+        "by appointment and other papers actually issued by this Office and approved by the "
+        "authorities concerned."
     )
+    cert_para = doc.add_paragraph(cert_text)
+    cert_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    doc.add_paragraph("")  # spacing
 
-    # Service record table
-    table = doc.add_table(rows=1, cols=6)
+    # ==============================
+    # SERVICE RECORD TABLE
+    # ==============================
+    headers = [
+        "From", "To", "Designation Status (1)", "Annual Salary (2)",
+        "Station / Place of Assignment", "Branch (3)", "Leave(s) w/out Pay Date", "Cause"
+    ]
+    table = doc.add_table(rows=1, cols=len(headers))
     table.style = "Table Grid"
     hdr_cells = table.rows[0].cells
-    headers = ["Service Inclusive Dates", "Record of Appointment", "Office/Division", "Salary", "Separation Date", "Cause"]
     for i, text in enumerate(headers):
         hdr_cells[i].text = text
 
-    # One row (for current job)
+    # Add data row (current employment)
     row = table.add_row().cells
-    row[0].text = f"{employee.date_hired.strftime('%b %d, %Y') if employee.date_hired else ''} - Present"
-    row[1].text = employee.position.name if employee.position else ""
-    row[2].text = employee.department.name if employee.department else ""
-    row[3].text = str(employee.salary or "")
-    row[4].text = ""
+    row[0].text = employee.date_hired.strftime('%b %d, %Y') if employee.date_hired else ''
+    row[1].text = "Present"
+    row[2].text = employee.position.name if employee.position else ''
+    row[3].text = f"{employee.salary or ''}"
+    row[4].text = employee.department.name if employee.department else ''
     row[5].text = ""
+    row[6].text = ""
+    row[7].text = ""
 
-    doc.add_paragraph(
-        "\nIssued in compliance with Executive Order No. 54 dated August 10, 1954, "
-        "and Circular No. 68 dated August 10, 1954."
+    doc.add_paragraph("")  # spacing
+
+    # ==============================
+    # FOOTER SECTION
+    # ==============================
+    footer = (
+        "Issued on compliance with Executive Order No. 54 dated August 10, 1954, and in accordance "
+        "with Circular No. 68 dated August 10, 1954 of the System."
     )
+    footer_para = doc.add_paragraph(footer)
+    footer_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    doc.add_paragraph("CERTIFIED CORRECT:")
+    doc.add_paragraph("FERNANDO DG. CRUZ")
+    doc.add_paragraph("Acting MHRMO")
+    doc.add_paragraph("Page 1 of 1")
+    doc.add_paragraph(date.today().strftime("%A, %B %d, %Y"))
 
-    # Signature block
-    doc.add_paragraph("\n\nCERTIFIED CORRECT:\n\n\nFERNANDO DG. CRUZ\nActing MHRMO")
-    doc.add_paragraph(f"\nDate: {date.today().strftime('%A, %B %d, %Y')}")
+    # Adjust font size
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            run.font.size = Pt(11)
 
-    # Save to BytesIO
+    # ==============================
+    # SAVE TO BYTES AND RETURN
+    # ==============================
     output = io.BytesIO()
     doc.save(output)
     output.seek(0)
@@ -344,82 +492,6 @@ def export_service_record(employee_id):
     )
 
 
-@hr_admin_bp.route("/employees/<int:employee_id>/edit", methods=["GET", "POST"])
-@login_required
-@admin_required
-def edit_employee(employee_id):
-    employee = Employee.query.get_or_404(employee_id)
-    positions = Position.query.all()
-    departments = Department.query.all()
-
-    if request.method == "POST":
-        try:
-            # Explicit mapping from request.form
-            employee.first_name = request.form.get("first_name")
-            employee.last_name = request.form.get("last_name")
-            employee.middle_name = request.form.get("middle_name")
-            employee.email = request.form.get("email")
-            employee.phone = request.form.get("phone")
-            employee.address = request.form.get("address")
-
-            # Foreign Keys
-            dept_id = request.form.get("department")
-            pos_id = request.form.get("position")
-            employee.department_id = int(dept_id) if dept_id else None
-            employee.position_id = int(pos_id) if pos_id else None
-
-            # Salary
-            salary_val = request.form.get("salary")
-            employee.salary = float(salary_val) if salary_val else None
-
-            # Dates (safe parsing)
-            def parse_date(date_str):
-                try:
-                    return datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
-                except ValueError:
-                    return None
-
-            employee.date_hired = parse_date(request.form.get("date_hired"))
-            employee.date_of_birth = parse_date(request.form.get("date_of_birth"))
-
-            # Other fields
-            employee.gender = request.form.get("gender")
-            employee.marital_status = request.form.get("marital_status")
-            employee.emergency_contact = request.form.get("emergency_contact")
-            employee.emergency_phone = request.form.get("emergency_phone")
-
-            status_val = request.form.get("status")
-            employee.active = True if status_val == "1" else False
-
-            employee.updated_at = datetime.utcnow()
-
-            db.session.commit()
-
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return {"status": "success", "message": "Employee updated successfully!"}, 200
-
-            flash("Employee updated successfully!", "success")
-            return redirect(url_for("hr_admin.view_employees"))
-
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating employee {employee_id}: {e}")
-
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return {"status": "error", "message": "Error updating employee. Please try again."}, 500
-
-            flash("Error updating employee. Please try again.", "error")
-
-    # Render edit page
-    return render_template(
-        "hr/admin/admin_edit.html",
-        employee=employee,
-        positions=positions,
-        departments=departments,
-    )
-
-
-
 @hr_admin_bp.route('/users', methods=['GET'])
 @login_required
 @admin_required
@@ -428,6 +500,7 @@ def view_users():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '').strip()
     role_filter = request.args.get('role', '').strip()
+    status_filter = request.args.get('status', '').strip()  
 
     # Base query
     query = User.query
@@ -444,22 +517,28 @@ def view_users():
     if role_filter:
         query = query.filter(User.role == role_filter)
 
+    # ✅ Apply status filter
+    if status_filter == "active":
+        query = query.filter(User.active.is_(True))
+    elif status_filter == "inactive":
+        query = query.filter(User.active.is_(False))
+
     # Paginate results
     users = query.order_by(User.id.asc()).paginate(page=page, per_page=10)
 
-    # For filter dropdown
-    roles = ['admin', 'employee', 'dept_head', 'officer']  # adjust according to your system roles
+    # Roles for dropdown
+    roles = ['admin', 'employee', 'dept_head', 'officer']
 
     return render_template(
         'hr/admin/admin_view_users.html',
         users=users,
         roles=roles,
         search=search,
-        role_filter=role_filter
+        role_filter=role_filter,
+        status_filter=status_filter  
     )
 
-
-
+    
 @hr_admin_bp.route("/user/<int:user_id>/edit", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -479,9 +558,9 @@ def edit_user(user_id):
 
             db.session.commit()
 
-            # If AJAX, return JSON for SweetAlert
+            # If AJAX, return JSON for SweetAlert (use 'status' + 'message' shape)
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"success": True})
+                return jsonify({"status": "success", "message": "User updated successfully!"})
 
             # Otherwise normal redirect with flash
             flash("User updated successfully!", "success")
@@ -490,9 +569,10 @@ def edit_user(user_id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating user {user_id}: {e}")
-            
+
+            # Return JSON error for AJAX
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"success": False, "message": "Error updating user. Please try again."})
+                return jsonify({"status": "error", "message": "Error updating user. Please try again."}), 500
 
             flash("Error updating user. Please try again.", "error")
 
@@ -504,73 +584,57 @@ def edit_user(user_id):
         departments=departments
     )
 
+
 @hr_admin_bp.route('/attendance')
 @login_required
 @admin_required
 def attendance():
     page = request.args.get('page', 1, type=int)
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
-    employee_filter = request.args.get('employee', '')
-    department_filter = request.args.get('department', '')
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    employee_filter = request.args.get('employee', '').strip()
+    department_filter = request.args.get('department', '').strip()
 
     # Base query
     query = Attendance.query.join(Employee).join(Employee.department)
 
-    # Filters
-    if start_date:
-        try:
-            query = query.filter(Attendance.date >= datetime.strptime(start_date, '%Y-%m-%d').date())
-        except ValueError:
-            pass
-    if end_date:
-        try:
-            query = query.filter(Attendance.date <= datetime.strptime(end_date, '%Y-%m-%d').date())
-        except ValueError:
-            pass
+    # ✅ Date filters
+    try:
+        if start_date and not end_date:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Attendance.date == start_date_obj)
+
+        elif end_date and not start_date:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Attendance.date == end_date_obj)
+
+        elif start_date and end_date:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+            # Swap if user entered in reverse
+            if end_date_obj < start_date_obj:
+                start_date_obj, end_date_obj = end_date_obj, start_date_obj
+
+            query = query.filter(
+                and_(
+                    Attendance.date >= start_date_obj,
+                    Attendance.date <= end_date_obj
+                )
+            )
+    except ValueError:
+        pass
+
+    # ✅ Employee and Department filters
     if employee_filter:
         query = query.filter(Attendance.employee_id == int(employee_filter))
     if department_filter:
         query = query.filter(Employee.department_id == int(department_filter))
 
-    # Sort and paginate
-    query = query.order_by(Attendance.date.desc())
-    attendances = query.paginate(page=page, per_page=20, error_out=False)
+    # Pagination
+    attendances = query.order_by(Attendance.date.desc()).paginate(page=page, per_page=20, error_out=False)
 
-    # Constants
-    WORK_START = time(8, 0, 0)
-    WORK_END = time(17, 0, 0)
-
-    updated = False
-    for record in attendances.items:
-        # Handle status and remarks
-        if record.time_in:
-            if record.time_in > WORK_START and record.status != "Late":
-                record.status = "Late"
-                record.remarks = f"Arrived late at {record.time_in.strftime('%I:%M %p')}"
-                updated = True
-            elif record.time_in <= WORK_START and record.status != "Present":
-                record.status = "Present"
-                record.remarks = f"On time at {record.time_in.strftime('%I:%M %p')}"
-                updated = True
-        else:
-            if record.status != "Absent":
-                record.status = "Absent"
-                record.remarks = "Absent"
-                updated = True
-
-        # Compute working hours starting from 8:00 AM
-        if record.time_in and record.time_out:
-            start_dt = datetime.combine(datetime.today(), max(record.time_in, WORK_START))
-            end_dt = datetime.combine(datetime.today(), record.time_out)
-            record.working_hours = round((end_dt - start_dt).seconds / 3600, 2)
-        else:
-            record.working_hours = 0
-
-    if updated:
-        db.session.commit()
-
-    # Dropdown filters
+    # Lists for dropdowns
     employees = Employee.query.filter_by(active=True).all()
     departments = Department.query.order_by(Department.name.asc()).all()
 
@@ -813,7 +877,6 @@ def view_leaves():
     leaves = query.order_by(Leave.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
     return render_template('hr/admin/admin_view_leaves.html', leaves=leaves, status_filter=status_filter)
 
-
 @hr_admin_bp.route('/review-leaves')
 @login_required
 @admin_required
@@ -821,11 +884,24 @@ def review_leaves():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
 
-    query = Leave.query.order_by(Leave.created_at.desc())
+    query = Leave.query
 
+    # Apply filter if selected
     if status_filter:
         query = query.filter_by(status=status_filter)
 
+    # ✅ Sort: Pending → Approved → Rejected → (None if any)
+    query = query.order_by(
+        db.case(
+            (Leave.status == 'Pending', 0),
+            (Leave.status == 'Approved', 1),
+            (Leave.status == 'Rejected', 2),
+            else_=3
+        ),
+        Leave.created_at.desc()
+    )
+
+    # Pagination
     leaves_paginated = query.paginate(page=page, per_page=20, error_out=False)
     
     return render_template(
@@ -833,6 +909,8 @@ def review_leaves():
         leaves=leaves_paginated,
         status_filter=status_filter
     )
+
+
 
 @hr_admin_bp.route('/leaves/<int:leave_id>/action', methods=['POST'])
 @login_required
@@ -859,18 +937,27 @@ def leave_action(leave_id):
 
 
 
-# ------------------------- Departments -------------------------
 @hr_admin_bp.route('/departments')
 @login_required
 @admin_required
 def view_departments():
     page = request.args.get('page', 1, type=int)
+
+    # Get paginated departments
     departments = Department.query.paginate(page=page, per_page=10)
-    
+
+    # Create a dictionary mapping department_id -> employee_count
+    employee_counts = dict(
+        db.session.query(
+            Employee.department_id,
+            func.count(Employee.id)
+        ).group_by(Employee.department_id).all()
+    )
 
     return render_template(
         'hr/admin/admin_view_departments.html',
-        departments=departments
+        departments=departments,
+        employee_counts=employee_counts
     )
 
 
@@ -902,46 +989,138 @@ def add_department():
 
     
 
-@hr_admin_bp.route("/department/<int:department_id>/edit", methods=["GET","POST"])
+@hr_admin_bp.route("/department/<int:department_id>/edit", methods=["GET", "POST"])
 @login_required
 @admin_required
 def edit_department(department_id):
     department = Department.query.get_or_404(department_id)
     employees = Employee.query.filter_by(department_id=department_id).all()
-    
 
     if request.method == "POST":
         try:
-            # Explicit mapping from request.form
             department.name = request.form.get("name") or department.name
             head_id = request.form.get("dept_head")
             department.head_id = int(head_id) if head_id else department.head_id
             department.description = request.form.get("description") or department.description
 
             db.session.commit()
-            flash('Department updated successfully!', 'success')
-            return redirect(url_for('hr_admin.view_departments'))
+
+            # ✅ Return JSON if it's an AJAX request
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(status="success", message="Department updated successfully!")
+
+            # Otherwise, redirect normally
+            flash("Department updated successfully!", "success")
+            return redirect(url_for("hr_admin.view_departments"))
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error updating employee {department_id}: {e}")
-            flash('Error updating department. Please try again.', 'error')
+            current_app.logger.error(f"Error updating department {department_id}: {e}")
 
-    # 🔹 If request is AJAX, only return the form partial (used in modal)
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template(
-            "hr/admin/edit_dept.html",
-            department=department, 
-            employees=employees
-        )
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(status="error", message="Error updating department. Please try again.")
 
-    # 🔹 Otherwise return full page
+            flash("Error updating department. Please try again.", "error")
+
+    # GET request
     return render_template(
         "hr/admin/edit_dept.html",
         department=department,
         employees=employees
     )
 
+@hr_admin_bp.route('/hr/admin/positions')
+@login_required
+def view_positions():
+    """Display paginated list of positions with employee count."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    positions = Position.query.order_by(Position.name.asc()).paginate(page=page, per_page=per_page)
+
+    # Count employees in each position
+    employee_counts = (
+        db.session.query(Employee.position_id, db.func.count(Employee.id))
+        .group_by(Employee.position_id)
+        .all()
+    )
+    employee_counts = {pos_id: count for pos_id, count in employee_counts}
+
+    return render_template(
+        'hr/admin/admin_view_positions.html',
+        positions=positions,
+        employee_counts=employee_counts
+    )
+
+
+@hr_admin_bp.route("/hr/admin/add_position", methods=["GET", "POST"])
+@login_required
+@admin_required
+def add_position():
+    from hr_system.hr.models.hr_models import Position
+
+    if request.method == "POST":
+        name = request.form.get("name").strip()
+        description = request.form.get("description").strip()
+
+        if not name:
+            flash("Position name is required.", "error")
+            return redirect(url_for("hr_admin.add_position"))
+
+        # Check for duplicate name
+        existing_position = Position.query.filter_by(name=name).first()
+        if existing_position:
+            flash("A position with this name already exists.", "error")
+            return redirect(url_for("hr_admin.add_position"))
+
+        # Create and save new position
+        new_position = Position(name=name, description=description)
+        db.session.add(new_position)
+        db.session.commit()
+
+        flash(f"Position '{name}' added successfully!", "success")
+        return redirect(url_for("hr_admin.view_positions"))  # You can adjust this target route
+
+    return render_template("hr/admin/add_positions.html")
+
+@hr_admin_bp.route("/position/<int:position_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_position(position_id):
+    position = Position.query.get_or_404(position_id)
+    departments = Department.query.all()
+
+    if request.method == "POST":
+        try:
+            position.name = request.form.get("name") or position.name
+            position.description = request.form.get("description") or position.description
+            dept_id = request.form.get("department_id")
+            position.department_id = int(dept_id) if dept_id else position.department_id
+
+            db.session.commit()
+
+            # For AJAX request
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"status": "success", "message": "Position updated successfully!"})
+
+            flash("Position updated successfully!", "success")
+            return redirect(url_for("hr_admin.view_positions"))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating position {position_id}: {e}")
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"status": "error", "message": "Error updating position. Please try again."})
+
+            flash("Error updating position. Please try again.", "error")
+
+    # Render form
+    return render_template(
+        "hr/admin/edit_position.html",
+        position=position,
+        departments=departments
+    )
 
 # ------------------------- Reports -------------------------
 @hr_admin_bp.route('/reports')
@@ -1001,11 +1180,11 @@ def reports():
         employees=employees if report_type in ['attendance', 'leaves'] else []
     )
 
-
 @hr_admin_bp.route('/hr/admin/attendance_reports')
 @login_required
+@admin_required
 def attendance_reports():
-    """Generate and view reports for attendance data."""
+    """Generate and view reports for attendance data with working hours."""
     # --- Get filter inputs ---
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
@@ -1021,14 +1200,13 @@ def attendance_reports():
             Employee.first_name,
             Employee.last_name,
             Department.name.label('department_name'),
-            func.count(Attendance.id).label('days_present'),
-            func.sum(
-                func.strftime('%s', Attendance.time_out) - func.strftime('%s', Attendance.time_in)
-            ).label('total_seconds')
+            func.count(
+                case((Attendance.status != 'Absent', 1))
+            ).label('days_present'),
+            func.sum(Attendance.working_hours).label('total_working_hours')
         )
         .join(Attendance, Attendance.employee_id == Employee.id)
         .outerjoin(Department, Department.id == Employee.department_id)
-        .filter(Attendance.time_in.isnot(None))
     )
 
     # --- Apply filters ---
@@ -1046,16 +1224,16 @@ def attendance_reports():
     # --- Process results ---
     report_data = []
     for r in results:
-        total_hours = (r.total_seconds or 0) / 3600
         report_data.append({
             'employee_name': f"{r.first_name} {r.last_name}",
             'department_name': r.department_name or 'N/A',
             'days_present': r.days_present,
-            'total_hours': round(total_hours, 2),
+            'total_hours': round(r.total_working_hours or 0, 2),
+            'average_hours': round((r.total_working_hours or 0) / r.days_present, 2) if r.days_present else 0
         })
 
     # --- Get departments for dropdown ---
-    departments = Department.query.all()
+    departments = Department.query.order_by(Department.name.asc()).all()
 
     return render_template(
         'hr/admin/attendance_reports.html',
@@ -1065,79 +1243,99 @@ def attendance_reports():
         end_date=end_date_str,
         department_id=department_id,
     )
-
-
 @hr_admin_bp.route('/attendance/reports/word')
 @login_required
+@admin_required
 def attendance_report_word():
+    """Generate a Word report for attendance within a date range and optional department."""
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     department_id = request.args.get('department_id', type=int)
 
-    # Convert dates
+    # --- Convert dates ---
     start_date_dt = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
     end_date_dt = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
 
-    # Query employees
-    query = db.session.query(Employee).join(Department)
+    # --- Base employee query ---
+    query = db.session.query(Employee).join(Department, isouter=True)
     if department_id:
         query = query.filter(Employee.department_id == department_id)
-    employees = query.all()
+    employees = query.order_by(Employee.last_name.asc()).all()
 
-    # Build report data
+    # --- Build report data ---
     report_data = []
     for emp in employees:
-        attendances = Attendance.query.filter(Attendance.employee_id == emp.id)
+        attendances = Attendance.query.filter_by(employee_id=emp.id)
+
         if start_date_dt:
             attendances = attendances.filter(Attendance.date >= start_date_dt)
         if end_date_dt:
             attendances = attendances.filter(Attendance.date <= end_date_dt)
 
-        days_present = attendances.count()
-        total_hours = sum([
-            ((a.time_out.hour*60 + a.time_out.minute) - (a.time_in.hour*60 + a.time_in.minute))/60
-            for a in attendances if a.time_in and a.time_out
-        ])
+        records = attendances.all()
+
+        # Count by status
+        days_present = sum(1 for a in records if a.status == "Present")
+        days_late = sum(1 for a in records if a.status == "Late")
+        days_absent = sum(1 for a in records if a.status == "Absent")
+
+        # Compute total working hours using your model's field
+        total_hours = round(sum(a.working_hours or 0 for a in records), 2)
+
         report_data.append({
-            'employee_name': f"{emp.first_name} {emp.last_name}",
-            'department_name': emp.department.name,
-            'days_present': days_present,
-            'total_hours': round(total_hours, 2)
+            "employee_name": f"{emp.last_name}, {emp.first_name} {emp.middle_name or ''}".strip(),
+            "department_name": emp.department.name if emp.department else "N/A",
+            "days_present": days_present,
+            "days_late": days_late,
+            "days_absent": days_absent,
+            "total_hours": total_hours
         })
 
-    # --- Generate Word document ---
+    # --- Create Word document ---
     doc = Document()
-    doc.add_heading('Attendance Report', level=1)
-    doc.add_paragraph(f'Date Range: {start_date or "All"} - {end_date or "All"}')
-    doc.add_paragraph('')
+    doc.add_heading("Norzagaray College - Attendance Report", level=1)
+    doc.add_paragraph(
+        f"Date Range: {start_date or 'All'} to {end_date or 'All'}"
+    )
+    if department_id:
+        dept_name = Department.query.get(department_id).name
+        doc.add_paragraph(f"Department: {dept_name}")
+    doc.add_paragraph("Generated on: " + datetime.now().strftime("%B %d, %Y"))
+    doc.add_paragraph("")
 
-    # Create table
-    table = doc.add_table(rows=1, cols=4)
-    table.style = 'Light List Accent 1'
+    # --- Create table ---
+    table = doc.add_table(rows=1, cols=6)
+    table.style = "Light Grid Accent 1"
     hdr_cells = table.rows[0].cells
-    hdr_cells[0].text = 'Employee'
-    hdr_cells[1].text = 'Department'
-    hdr_cells[2].text = 'Days Present'
-    hdr_cells[3].text = 'Total Hours'
+    headers = ["Employee", "Department", "Days Present", "Late", "Absent", "Total Hours"]
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
 
+    # Fill table
     for row in report_data:
         row_cells = table.add_row().cells
-        row_cells[0].text = row['employee_name']
-        row_cells[1].text = row['department_name']
-        row_cells[2].text = str(row['days_present'])
-        row_cells[3].text = f"{row['total_hours']:.2f}"
+        row_cells[0].text = row["employee_name"]
+        row_cells[1].text = row["department_name"]
+        row_cells[2].text = str(row["days_present"])
+        row_cells[3].text = str(row["days_late"])
+        row_cells[4].text = str(row["days_absent"])
+        row_cells[5].text = f"{row['total_hours']:.2f}"
 
-    # Save to BytesIO
+    # --- Save to memory buffer ---
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
 
+    # --- Send file for download ---
+    filename = f"attendance_report_{start_date or 'all'}_to_{end_date or 'all'}.docx"
     return send_file(
         buffer,
         as_attachment=True,
-        download_name="attendance_report.docx",
+        download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+
+
 @hr_admin_bp.route('/hr/admin/leave_reports')
 @login_required
 def leave_reports():
@@ -1188,6 +1386,99 @@ def leave_reports():
         selected_leave_type=leave_type_id,
         start_date=start_date_str,
         end_date=end_date_str
+    )
+
+
+@hr_admin_bp.route('/leave/reports/word')
+@login_required
+@admin_required
+def leave_report_word():
+    """Generate a Word report for leave records within a date range and optional filters."""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    department_id = request.args.get('department_id', type=int)
+    leave_type_id = request.args.get('leave_type_id', type=int)
+
+    # Convert date strings
+    start_date_dt = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+    end_date_dt = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+
+    # --- Base Query ---
+    query = (
+        db.session.query(
+            Employee.id.label("employee_id"),
+            func.concat(Employee.first_name, ' ', Employee.last_name).label("employee_name"),
+            Department.name.label("department_name"),
+            LeaveType.name.label("leave_type"),
+            func.count(Leave.id).label("leave_count"),
+            func.sum(Leave.days_requested).label("total_leave_days")
+        )
+        .join(Department, Employee.department_id == Department.id)
+        .join(Leave, Leave.employee_id == Employee.id)
+        .join(LeaveType, LeaveType.id == Leave.leave_type_id)
+    )
+
+    # Apply filters dynamically
+    if start_date_dt:
+        query = query.filter(Leave.start_date >= start_date_dt)
+    if end_date_dt:
+        query = query.filter(Leave.end_date <= end_date_dt)
+    if department_id:
+        query = query.filter(Employee.department_id == department_id)
+    if leave_type_id:
+        query = query.filter(Leave.leave_type_id == leave_type_id)
+
+    # Group by employee and leave type
+    query = query.group_by(Employee.id, Department.name, LeaveType.name)
+    results = query.all()
+
+    # --- Create Word document ---
+    doc = Document()
+    doc.add_heading("Norzagaray College - Leave Report", level=1)
+    doc.add_paragraph(f"Date Range: {start_date or 'All'} to {end_date or 'All'}")
+
+    if department_id:
+        dept = Department.query.get(department_id)
+        if dept:
+            doc.add_paragraph(f"Department: {dept.name}")
+
+    if leave_type_id:
+        leave_type = LeaveType.query.get(leave_type_id)
+        if leave_type:
+            doc.add_paragraph(f"Leave Type: {leave_type.name}")
+
+    doc.add_paragraph("Generated on: " + datetime.now().strftime("%B %d, %Y"))
+    doc.add_paragraph("")
+
+    # --- Create table ---
+    table = doc.add_table(rows=1, cols=5)
+    table.style = "Light Grid Accent 1"
+    hdr_cells = table.rows[0].cells
+    headers = ["Employee", "Department", "Leave Type", "Leave Count", "Total Leave Days"]
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
+
+    # --- Fill table with query results ---
+    for row in results:
+        row_cells = table.add_row().cells
+        row_cells[0].text = row.employee_name
+        row_cells[1].text = row.department_name or "N/A"
+        row_cells[2].text = row.leave_type or "N/A"
+        row_cells[3].text = str(row.leave_count or 0)
+        row_cells[4].text = str(row.total_leave_days or 0)
+
+    # --- Save to memory ---
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    # --- Send as downloadable Word file ---
+    filename = f"leave_report_{start_date or 'all'}_to_{end_date or 'all'}.docx"
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
 

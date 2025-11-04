@@ -76,38 +76,6 @@
     <div class="chart-container" style="margin-top: 30px;">
       <canvas id="monthlyAttendanceChart"></canvas>
     </div>
-
-    <!-- Recent Leaves Table -->
-    <div class="recent-leaves" style="margin-top: 40px;">
-      <h2>Recent Leave Requests</h2>
-      {% if recent_leaves %}
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Leave Type</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Days</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for leave in recent_leaves %}
-          <tr>
-            <td>{{ leave.leave_type }}</td>
-            <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ leave.days_requested }}</td>
-            <td>{{ leave.status }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>No recent leave requests.</p>
-      {% endif %}
-    </div>
-
   </div>
 </main>
 

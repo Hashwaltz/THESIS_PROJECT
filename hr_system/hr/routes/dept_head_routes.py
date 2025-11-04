@@ -7,8 +7,10 @@ from ..forms import AttendanceForm, LeaveForm
 from ..utils import dept_head_required, get_attendance_summary, get_current_month_range,get_department_attendance_summary
 from .. import db
 import csv
+from io import BytesIO
+from flask import send_file
 import os
-
+from openpyxl import Workbook
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -77,6 +79,8 @@ def dashboard():
         not_assigned=False
     )
 
+
+
 @dept_head_bp.route('/employee/<int:employee_id>/edit')
 @login_required
 @dept_head_required
@@ -97,7 +101,6 @@ def edit_employee(employee_id):
 
     return render_template("hr/head/head_edit.html", employee=employee, positions=positions, departments=departments)
 
-
 @dept_head_bp.route('/employees')
 @login_required
 @dept_head_required
@@ -105,9 +108,12 @@ def employees():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
 
-    # Only employees in the same department as the logged-in Dept Head
+    # Get the department of the current department head
+    department = current_user.department
+
+    # Only employees in the same department
     query = Employee.query.filter_by(
-        department=current_user.department,
+        department=department,
         active=True
     )
 
@@ -127,8 +133,10 @@ def employees():
     return render_template(
         'hr/head/head_employee.html',
         employees=employees,
-        search=search
+        search=search,
+        department=department  
     )
+
 
 
 @dept_head_bp.route('/employees/export')
@@ -138,28 +146,42 @@ def export_employees():
     dept_id = current_user.department_id
     employees = Employee.query.filter_by(department_id=dept_id, active=True).all()
 
-    def generate():
-        data = [['Employee ID', 'First Name', 'Last Name', 'Email', 'Department', 'Status']]
-        for emp in employees:
-            data.append([
-                emp.employee_id,
-                emp.first_name,
-                emp.last_name,
-                emp.email or '',
-                emp.department.name if emp.department else '',
-                'Active' if emp.active else 'Inactive'
-            ])
-        output = []
-        for row in data:
-            output.append(','.join(row))
-        return '\n'.join(output)
+    # Create Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Employees"
 
-    return Response(
-        generate(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=employees_report.csv"}
+    # Header row
+    headers = ['Employee ID', 'First Name', 'Last Name', 'Email', 'Department', 'Status']
+    ws.append(headers)
+
+    # Data rows
+    for emp in employees:
+        ws.append([
+            emp.employee_id,
+            emp.first_name,
+            emp.last_name,
+            emp.email or '',
+            emp.department.name if emp.department else '',
+            'Active' if emp.active else 'Inactive'
+        ])
+
+    # Adjust column widths
+    for column_cells in ws.columns:
+        length = max(len(str(cell.value)) if cell.value else 0 for cell in column_cells)
+        ws.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+    # Save workbook to memory (not disk)
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="employees_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
 
 @dept_head_bp.route('/attendance')
 @login_required
@@ -216,6 +238,9 @@ def attendance():
             Attendance.time_in > shift_start
         ).all()
 
+    # --- DEPARTMENT NAME (for header) ---
+    department = Department.query.get(dept_id)
+
     return render_template(
         'hr/head/head_attendance.html',
         employees=employees,
@@ -224,10 +249,9 @@ def attendance():
         late_arrivals=late_arrivals,
         search=search,
         date_filter=date_filter,
-        employee_filter=employee_filter
+        employee_filter=employee_filter,
+        department=department
     )
-
-
 
 
 

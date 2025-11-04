@@ -4,7 +4,7 @@
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1><b>Departments</b></h1>
+    <h1><b>Department Details</b></h1>
   </header>
 
   <div class="table-container">
@@ -18,6 +18,7 @@
             <th>Name</th>
             <th>Description</th>
             <th>Head</th>
+            <th>Employees</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -33,13 +34,16 @@
                 <em>No Head Assigned</em>
               {% endif %}
             </td>
+            <td data-label="Employees">
+              {{ employee_counts.get(dept.id, 0) }}
+            </td>
             <td data-label="Actions">
               <a
                 href="{{ url_for('hr_admin.edit_department', department_id=dept.id) }}"
                 class="btn-action"
                 style="color: #4070f4; text-decoration: none;"
               >
-                View | Edit
+                Edit
               </a>
             </td>
           </tr>

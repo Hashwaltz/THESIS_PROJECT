@@ -4,27 +4,36 @@
 <main class="content-wrap">
 
   <header class="content-head">
-    <h1><b>Employee Records</b></h1>
+    <h1>
+      <b>Employee Records — {{ department.name if department else "Unassigned Department" }}</b>
+    </h1>  
   </header>
 
-  <div class="table-container">
-    <div class="centered-container">
-      <!-- Search bar -->
+   <!-- Search bar -->
       <div class="searching">
         <form method="get" action="{{ url_for('dept_head.employees') }}" class="search-form">
           <div class="fields">
             <div class="input-field">
               <input type="text" name="search" value="{{ search }}" placeholder="Search employees...">
-              <button type="submit">Search</button>
+              <button type="submit">
+                <span class="material-symbols-outlined">
+                person_search
+                </span>
+                Search
+              </button>
               <a href="{{ url_for('dept_head.export_employees') }}" style="text-decoration: none;color: #fff;" class="printing">
-                  <span class="material-symbols-outlined">file_export</span>
-                  Print
+                  <span class="material-symbols-outlined">
+                    download
+                  </span>
+                  Export Excel
               </a>
             </div>
           </div>
         </form>
       </div>
 
+  <div class="table-container">
+    <div class="centered-container">
       <table class="responsive-table">
         <caption><b>Employee List</b></caption>
         <thead>

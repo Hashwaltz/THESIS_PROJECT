@@ -1,138 +1,69 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Payroll Admin - Process Payroll{% endblock %}
-
+{% block title %}Admin-Payroll Departments{% endblock %}
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Process Payroll</b></h1>
-  </header>
+<h2>Payroll Departments</h2>
 
-  <div class="table-container">
-    <!-- Select Payroll Period -->
-    <div class="searching mb-3">
-      <form method="post" action="{{ url_for('payroll_admin.process_payroll') }}">
-        <div class="fields">
-          <div class="input-field">
-            <label for="payroll_period_id" class="form-label">Select Payroll Period</label>
-            <select name="payroll_period_id" id="payroll_period_id" class="form-select" required>
-              <option value="">-- Choose Period --</option>
-              {% for period in periods %}
-                <option value="{{ period.id }}"
-                  {% if preview_period and preview_period.id == period.id %}selected{% endif %}>
-                  {{ period.period_name }} ({{ period.start_date }} to {{ period.end_date }})
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="input-field" style="align-self: end;">
-            <button type="submit" class="printing">Process Payroll</button>
-          </div>
+<div class="department-cards">
+    {% for dept in departments %}
+    <div class="department-card" onclick="goToManualPayroll({{ dept.id }})">
+        <div class="dept-icon">
+            <span class="material-symbols-outlined">business</span>
         </div>
-      </form>
+        <div class="dept-info">
+            <h4>{{ dept.name }}</h4>
+            <p>{{ dept.employee_count }} Employees</p>
+        </div>
     </div>
+    {% endfor %}
+</div>
 
-    <!-- Active Employees -->
-    <h3>Active Employees</h3>
-    <table class="responsive-table">
-      <thead>
-        <tr>
-          <th>Employee ID</th>
-          <th>Full Name</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for emp in employees %}
-          <tr>
-            <td>{{ emp.employee_id }}</td>
-            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
-          </tr>
-        {% else %}
-          <tr>
-            <td colspan="2">No active employees found.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    {% if preview_payrolls %}
-      <h3>Payroll Preview for {{ preview_period.period_name }}</h3>
-      <table class="responsive-table">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Basic Salary</th>
-            <th>Overtime</th>
-            <th>Holiday</th>
-            <th>Night Diff</th>
-            <th>Gross</th>
-            <th>Allowances</th>
-            <th>Total Deductions</th>
-            <th>Net Pay</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in preview_payrolls %}
-            <tr>
-              <td>{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.basic_salary or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.overtime_pay or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.holiday_pay or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.night_diff or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.gross or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.allowances or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.total_deductions or 0) }}</td>
-              <td>₱ {{ "{:,.2f}".format(p.net_pay or 0) }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Confirm Payroll Button -->
-      <form id="confirmPayrollForm" method="post" action="{{ url_for('payroll_admin.confirm_payroll') }}">
-        <input type="hidden" name="period_id" value="{{ preview_period.id }}">
-        <button style="color:#fff;" type="button" id="confirmPayrollBtn" class="printing mt-3">Confirm & Save Payroll</button>
-      </form>
-    {% endif %}
-  </div>
-</main>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.getElementById('confirmPayrollBtn')?.addEventListener('click', function(e) {
-    e.preventDefault();
-    Swal.fire({
-        title: 'Confirm Payroll?',
-        html: 'This will save the payroll for all employees in this period.<br><br><b>Are you sure you want to proceed?</b>',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#198754',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, confirm & save',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('confirmPayrollForm').submit();
-        }
-    });
-});
+function goToManualPayroll(deptId) {
+    window.location.href = "{{ url_for('payroll_admin.department_employees', department_id=0) }}".replace("0", deptId);
+}
 
-// Flash messages
-document.addEventListener('DOMContentLoaded', function() {
-    const messages = [
-        {% for category, message in get_flashed_messages(with_categories=true) %}
-            {category: "{{ category }}", message: "{{ message }}" },
-        {% endfor %}
-    ];
-
-    messages.forEach(msg => {
-        Swal.fire({
-            icon: msg.category === 'success' ? 'success' : 'error',
-            title: msg.message,
-            timer: 2500,
-            showConfirmButton: false
-        });
-    });
-});
 </script>
+
+<style>
+.department-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.department-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.department-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  background: #f8f9fa;
+}
+.dept-icon {
+  background: #198754;
+  color: white;
+  padding: 0.8rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dept-info h4 {
+  margin: 0;
+  font-weight: bold;
+}
+.dept-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+</style>
 {% endblock %}

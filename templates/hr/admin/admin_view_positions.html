@@ -1,0 +1,64 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Positions{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Position Details</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <table class="responsive-table">
+        <caption>
+          <b>Positions List</b>
+        </caption>
+        <thead>
+          <tr>
+            <th>Position Name</th>
+            <th>Description</th>
+            <th>Employees</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for position in positions.items %}
+          <tr>
+            <td data-label="Position Name">{{ position.name }}</td>
+            <td data-label="Description">{{ position.description or '-' }}</td>
+            <td data-label="Employees">
+              {{ employee_counts.get(position.id, 0) }}
+            </td>
+            <td data-label="Actions">
+              <a
+                href="{{ url_for('hr_admin.edit_position', position_id=position.id) }}"
+                class="btn-action"
+                style="color: #4070f4; text-decoration: none;"
+              >
+                Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align:center;">No positions found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        {% if positions.has_prev %}
+        <a href="{{ url_for('hr_admin.view_positions', page=positions.prev_num) }}">Previous</a>
+        {% endif %}
+
+        <span>Page {{ positions.page }} of {{ positions.pages }}</span>
+
+        {% if positions.has_next %}
+        <a href="{{ url_for('hr_admin.view_positions', page=positions.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,52 +1,56 @@
 {% extends 'hr/admin/admin_base.html' %} 
-{% block title %}HR Admin-Employees{% endblock %} 
+{% block title %}HR Admin - Employees{% endblock %} 
 
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1><b>Records</b></h1>
+    <h1><b>Employee Records</b></h1>
   </header>
 
-  <!-- Search + Department Filter -->
-  <div class="searching">
+  <!-- Employee Search + Filter -->
+  <div class="search-container">
     <form
       method="get"
       action="{{ url_for('hr_admin.view_employees') }}"
-      class="search-form"
       id="employeeFilterForm"
     >
-      <div class="fields" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <!-- Search input -->
-        <div class="input-field">
-          <input
-            type="text"
-            name="search"
-            value="{{ search }}"
-            placeholder="Search employees..."
-          />
-          <button
-            type="submit"
-            style="display: flex; align-items: center; gap: 6px"
-          >
-            <span class="material-symbols-outlined" style="font-size: 30px">
-              person_search
-            </span>
-            Search
-          </button>
-        </div>
-
-        <!-- Department filter -->
-        <div class="input-field">
-          <select name="department_id" id="departmentSelect">
-            <option value="">All Departments</option>
-            {% for dept in departments %}
-            <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
-              {{ dept.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+    <div class="filter-row">
+      <div class="input-field">
+        <select name="department_id" id="departmentSelect">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+          {% endfor %}
+        </select>
       </div>
+
+      <div class="input-field">
+        <select name="employment_type_id" id="employmentTypeSelect">
+          <option value="">All Employment Types</option>
+          {% for etype in employment_types %}
+          <option value="{{ etype.id }}" {% if etype.id|string == selected_employment_type %}selected{% endif %}>
+            {{ etype.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+     </div> 
+
+      <div class="input-field">
+        <input
+          type="text"
+          name="search"
+          value="{{ search }}"
+          placeholder="Search employees..."
+        />
+      </div>
+
+      <button type="submit">
+        <span class="material-symbols-outlined">person_search</span>
+        Search
+      </button>
     </form>
   </div>
 
@@ -67,7 +71,9 @@
           href="{{ url_for('hr_admin.export_employees_excel') }}"
           style="display: flex; align-items: center; gap: 6px; text-decoration: none; background: #007bff; color: white; padding: 6px 12px; border-radius: 5px;"
         >
-          <span class="material-symbols-outlined" style="font-size: 30px">print</span>
+          <span class="material-symbols-outlined">
+          download
+          </span>
           Export Employees (Excel)
         </a>
       </div>
@@ -115,13 +121,13 @@
                 href="{{ url_for('hr_admin.edit_employee', employee_id=employee.id) }}"
                 class="btn-action"
               >
-                View | Edit
+                Edit
               </a>
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="8">No employees found.</td>
+            <td colspan="9">No employees found.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -131,7 +137,7 @@
       <div class="pagination" style="margin-top: 1rem; text-align: center">
         {% if employees.has_prev %}
         <a
-          href="{{ url_for('hr_admin.view_employees', page=employees.prev_num, search=search, department_id=selected_department) }}"
+          href="{{ url_for('hr_admin.view_employees', page=employees.prev_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}"
         >
           Previous
         </a>
@@ -141,7 +147,7 @@
 
         {% if employees.has_next %}
         <a
-          href="{{ url_for('hr_admin.view_employees', page=employees.next_num, search=search, department_id=selected_department) }}"
+          href="{{ url_for('hr_admin.view_employees', page=employees.next_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}"
         >
           Next
         </a>
@@ -151,12 +157,20 @@
   </div>
 </main>
 
+<!-- Auto Filter Script -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // Auto-submit department filter
-    const departmentSelect = document.getElementById("departmentSelect");
     const filterForm = document.getElementById("employeeFilterForm");
+    const departmentSelect = document.getElementById("departmentSelect");
+    const employmentTypeSelect = document.getElementById("employmentTypeSelect");
+
+    // Auto-submit when Department changes
     departmentSelect.addEventListener("change", () => {
+      filterForm.submit();
+    });
+
+    // Auto-submit when Employment Type changes
+    employmentTypeSelect.addEventListener("change", () => {
       filterForm.submit();
     });
   });

@@ -1,0 +1,64 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %} HR Admin - Add Position {% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Add Position</b></h1>
+  </header>
+
+  <div class="department-container">
+    <header>Position Details</header>
+    <form id="positionForm" method="POST" action="{{ url_for('hr_admin.add_position') }}">
+      <div class="form first">
+        <div class="details personal">
+          <div class="fields">
+            <div class="input-field">
+              <label>Position Name</label>
+              <input type="text" name="name" class="form-control" placeholder="Enter position name" required>
+            </div>
+
+            <div class="input-field">
+              <label>Description</label>
+              <textarea name="description" class="form-control" placeholder="Enter position description"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="submit" id="submitBtn">
+          <span class="material-symbols-outlined">add_circle</span>
+          Add Position
+        </button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("positionForm");
+  const submitBtn = document.getElementById("submitBtn");
+
+  // ✅ Confirm before submitting
+  form.addEventListener("submit", function (e) {
+    e.preventDefault(); // prevent normal submit
+    Swal.fire({
+      title: "Confirm Add Position",
+      text: "Are you sure you want to add this position?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#4070f4",
+      cancelButtonColor: "#e74a3b",
+      confirmButtonText: "Yes, Add it",
+      cancelButtonText: "Cancel"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit(); // proceed with submission
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

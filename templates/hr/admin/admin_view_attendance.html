@@ -7,22 +7,31 @@
     <h1>Attendance Records</h1>
   </header>
 
-  <!-- Filter Form -->
-  <div class="search-box">
-    <form method="get" class="filter-form">
-      <div class="fields">
+  <!-- Filter Section -->
+  <div class="search-container">
+    <form method="get" action="{{ url_for('hr_admin.attendance') }}" id="attendanceFilterForm">
+      <div class="filter-row">
         <div class="input-field">
-          <label>Start Date</label>
+          <label for="start_date">Start Date</label>
           <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
         </div>
+
         <div class="input-field">
-          <label>End Date</label>
+          <label for="end_date">End Date</label>
           <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
         </div>
+
+        <button type="submit" class="search-btn">
+          <span class="material-symbols-outlined">database_search</span>
+          Filter Dates
+        </button>
+      </div>
+
+      <div class="filter-row">  
+
         <div class="input-field">
-          <label>Employee</label>
           <select id="employee" name="employee">
-            <option value="">All</option>
+            <option value="">All Employees</option>
             {% for emp in employees %}
               <option value="{{ emp.id }}" {% if employee_filter == emp.id|string %}selected{% endif %}>
                 {{ emp.get_full_name() }}
@@ -30,23 +39,16 @@
             {% endfor %}
           </select>
         </div>
+
         <div class="input-field">
-          <label>Department</label>
           <select id="department" name="department">
-            <option value="">All</option>
+            <option value="">All Departments</option>
             {% for dept in departments %}
               <option value="{{ dept.id }}" {% if department_filter == dept.id|string %}selected{% endif %}>
                 {{ dept.name }}
               </option>
             {% endfor %}
           </select>
-        </div>
-        <div class="input-field">
-          <label>&nbsp;</label>
-          <button type="submit" class="submit" style="display: flex; align-items: center; gap: 6px;">
-            <span class="material-symbols-outlined" style="font-size: 20px;">filter_list</span>
-            <span class="btnText">Filter</span>
-          </button>
         </div>
       </div>
     </form>
@@ -75,29 +77,32 @@
           <td>{{ attendance.date }}</td>
           <td>{{ attendance.time_in or '-' }}</td>
           <td>{{ attendance.time_out or '-' }}</td>
-          <td>{{ '%.2f'|format(attendance.working_hours) }}</td>
+          <td>
+            {% if attendance.status == 'Absent' %}
+              <span style="color: gray;">N/A</span>
+            {% else %}
+              {{ '%.2f'|format(attendance.working_hours) }}
+            {% endif %}
+          </td>
           <td>
             {% if attendance.status == 'Late' %}
               <span style="color: orange; font-weight: bold;">Late</span>
             {% elif attendance.status == 'Present' %}
               <span style="color: green; font-weight: bold;">Present</span>
-            {%elif attendance.status == 'Absent' %}
-            <span style="color: red; font-weight: bold;">Absent</span>
+            {% elif attendance.status == 'Absent' %}
+              <span style="color: red; font-weight: bold;">Absent</span>
             {% else %}
               {{ attendance.status }}
             {% endif %}
           </td>
           <td>
-            <!-- Navigate to full-page edit -->
             <a href="{{ url_for('hr_admin.edit_attendance', attendance_id=attendance.id) }}" class="btn-action">
               Edit
             </a>
           </td>
         </tr>
         {% else %}
-        <tr>
-          <td colspan="8">No attendance records found.</td>
-        </tr>
+        <tr><td colspan="8">No attendance records found.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -113,6 +118,16 @@
       {% endif %}
     </div>
   </div>
+
+  <!-- Auto-submit for dropdowns -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("attendanceFilterForm");
+      ["employee", "department"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", () => form.submit());
+      });
+    });
+  </script>
 </main>
 {% endblock %}
-  

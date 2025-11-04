@@ -5,19 +5,11 @@
 <main class="content-wrap">
   <header class="content-head">
     <h1><b>Attendance Reports</b></h1>
-    <!-- Action Buttons -->
-    <div class="action" style="display:flex; gap:10px; margin-top:10px;">
-      <!-- Download Word Button -->
-      <a href="{{ url_for('hr_admin.attendance_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
-         class="btn-primary" target="_blank">
-        Download Word
-      </a>
-    </div>
   </header>
 
   <!-- Filter Form -->
-  <div class="searching">
-    <form method="get" class="fields inline-form">
+  <div class="search-container">
+    <form method="get">
       <div class="input-field">
         <label>Start Date:</label>
         <input type="date" name="start_date" value="{{ start_date }}">
@@ -29,9 +21,8 @@
       </div>
 
       <div class="input-field">
-        <label>Department:</label>
         <select name="department_id">
-          <option value="">All</option>
+          <option value="">All Departments</option>
           {% for d in departments %}
             <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
           {% endfor %}
@@ -39,7 +30,19 @@
       </div>
 
       <div class="input-field">
-        <button type="submit" class="btn-primary">Generate</button>
+        <button type="submit">
+          <span class="material-symbols-outlined">
+          text_fields_alt
+          </span>
+          Generate Report
+        </button>
+          <a href="{{ url_for('hr_admin.attendance_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
+            style="margin-bottom: 15px; display: flex; align-items: center; gap: 6px; text-decoration: none; background: #007bff; color: white; padding: 6px 12px; border-radius: 5px;">
+            <span class="material-symbols-outlined">
+              download
+              </span>
+            Import Attendance Report (.docx)
+          </a>
       </div>
     </form>
   </div>

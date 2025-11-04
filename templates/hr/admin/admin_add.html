@@ -8,12 +8,13 @@
   </header>
 
   <div class="container">
-    <header>Personal Details</header>
+    <header>Employee Information</header>
     <form method="POST" action="{{ url_for('hr_admin.add_employee') }}">
       <div class="form first">
         <div class="details personal">
           <div class="fields">
 
+            <!-- Personal Details -->
             <div class="input-field">
               <label>First Name</label>
               <input type="text" name="first_name" placeholder="Enter employee first name" required />
@@ -30,43 +31,8 @@
             </div>
 
             <div class="input-field">
-              <label>Email</label>
-              <input type="email" name="email" placeholder="Enter employee email" required />
-            </div>
-
-            <div class="input-field">
-              <label>Mobile Number</label>
-              <input type="text" name="phone" placeholder="Enter mobile number" required />
-            </div>
-
-            <div class="input-field">
-              <label>Address</label>
-              <input type="text" name="address" placeholder="House/Street, Barangay, City, Province, ZIP" required />
-            </div>
-
-            <div class="input-field">
-              <label>Salary Rate</label>
-              <input type="number" name="salary" placeholder="Enter salary per hour" required />
-            </div>
-
-            <div class="input-field">
               <label>Date of Birth</label>
               <input type="date" name="date_of_birth" required />
-            </div>
-
-            <div class="input-field">
-              <label>Date Hired</label>
-              <input type="date" name="date_hired" required />
-            </div>
-
-            <div class="input-field">
-              <label>Position</label>
-              <select name="position" required>
-                <option disabled selected>Select position</option>
-                {% for pos in positions %}
-                  <option value="{{ pos.id }}">{{ pos.name }}</option>
-                {% endfor %}
-              </select>
             </div>
 
             <div class="input-field">
@@ -90,6 +56,43 @@
               </select>
             </div>
 
+            <!-- Contact Details -->
+            <div class="input-field">
+              <label>Email</label>
+              <input type="email" name="email" placeholder="Enter employee email" required />
+            </div>
+
+            <div class="input-field">
+              <label>Mobile Number</label>
+              <input type="text" name="phone" placeholder="Enter mobile number" required />
+            </div>
+
+            <div class="input-field">
+              <label>Address</label>
+              <input type="text" name="address" placeholder="House/Street, Barangay, City, Province, ZIP" required />
+            </div>
+
+            <!-- Employment Details -->
+            <div class="input-field">
+              <label>Employment Type</label>
+              <select name="employment_type_id" id="employmentTypeSelect" required>
+                <option disabled selected>Select employment type</option>
+                {% for emp_type in employment_types %}
+                  <option value="{{ emp_type.id }}">{{ emp_type.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="input-field">
+              <label>Salary Rate</label>
+              <input type="number" id="salaryInput" name="salary" placeholder="Enter salary" required />
+            </div>
+
+            <div class="input-field">
+              <label>Date Hired</label>
+              <input type="date" name="date_hired" required />
+            </div>
+
             <div class="input-field">
               <label>Department</label>
               <select name="department" required>
@@ -101,21 +104,29 @@
             </div>
 
             <div class="input-field">
-              <label>Emergency Contact Name</label>
-              <input type="text" name="emergency_contact" placeholder="Enter emergency contact person" required />
+              <label>Position</label>
+              <select name="position" required>
+                <option disabled selected>Select position</option>
+                {% for pos in positions %}
+                  <option value="{{ pos.id }}">{{ pos.name }}</option>
+                {% endfor %}
+              </select>
             </div>
 
+            <!-- Emergency Contact -->
             <div class="input-field">
-              <label>Emergency Contact Number</label>
-              <input type="text" name="emergency_phone" placeholder="Enter emergency number" required />
+              <label>Emergency Contact Name</label>
+              <input type="text" name="emergency_contact" placeholder="Enter emergency contact person" required />
             </div>
 
           </div>
         </div>
 
         <button type="button" class="submit" id="saveEmployeeBtn">
-          <span class="btnText">Add Employee</span>
-          <i class="uil uil-navigator"></i>
+          <span class="material-symbols-outlined">
+            person_add
+          </span>
+          Save Employee
         </button>
 
       </div>
@@ -127,10 +138,48 @@
 document.addEventListener("DOMContentLoaded", function () {
   const saveBtn = document.getElementById("saveEmployeeBtn");
   const form = document.querySelector("form");
+  const employmentTypeSelect = document.getElementById("employmentTypeSelect");
+  const salaryInput = document.getElementById("salaryInput");
 
+  // 💡 Change salary placeholder dynamically based on Employment Type
+  employmentTypeSelect.addEventListener("change", function () {
+    const selectedText = this.options[this.selectedIndex].text.toLowerCase();
+
+    if (selectedText.includes("casual")) {
+      salaryInput.placeholder = "Enter salary per day";
+    } else if (selectedText.includes("regular")) {
+      salaryInput.placeholder = "Enter salary per month";
+    } else if (selectedText.includes("part")) {
+      salaryInput.placeholder = "Enter salary per hour";
+    } else {
+      salaryInput.placeholder = "Enter salary";
+    }
+  });
+
+  // ✅ Validation and Confirmation
   saveBtn.addEventListener("click", function (e) {
-    e.preventDefault(); // prevent immediate form submit
+    e.preventDefault();
 
+    const inputs = form.querySelectorAll("input[required], select[required]");
+    let emptyFields = [];
+
+    inputs.forEach(input => {
+      if (!input.value || input.value.trim() === "") {
+        emptyFields.push(input.previousElementSibling.innerText);
+      }
+    });
+
+    if (emptyFields.length > 0) {
+      Swal.fire({
+        title: "Missing Fields!",
+        html: "Please fill in the following required fields:<br><b>" + emptyFields.join(", ") + "</b>",
+        icon: "error",
+        confirmButtonText: "Okay"
+      });
+      return; // Stop submission
+    }
+
+    // If all fields filled, confirm submission
     Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
@@ -147,5 +196,4 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
-
 {% endblock %}

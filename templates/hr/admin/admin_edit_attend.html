@@ -4,7 +4,7 @@
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1>Edit Attendance</h1>
+    <h1><b>Edit Attendance</b></h1>
   </header>
 
   <div class="edit-container">
@@ -48,8 +48,18 @@
         </div>
 
         <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="submit" style="color: #fff;" class="printing">Update</button>
-          <a href="{{ url_for('hr_admin.attendance') }}" class="printing">Cancel</a>
+          <button type="submit" style="color: #fff;" class="printing">
+            <span class="material-symbols-outlined">
+            update
+            </span>
+            Update
+          </button>
+          <a href="{{ url_for('hr_admin.attendance') }}" class="printing">
+            <span class="material-symbols-outlined">
+            cancel
+            </span>
+            Cancel
+          </a>
         </div>
       </div>
     </form>

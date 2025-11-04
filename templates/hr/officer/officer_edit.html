@@ -43,11 +43,6 @@
               </div>
 
               <div class="input-field">
-                <label>Salary</label>
-                <input type="number" name="salary" id="salary" value="{{ employee.salary }}" readonly />
-              </div>
-
-              <div class="input-field">
                 <label>Date of Birth</label>
                 <input type="date" name="date_of_birth" 
                        value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}" readonly />
@@ -116,10 +111,24 @@
             </div>
           </div>
 
-          <button type="submit" class="printing">
-            <span style="color: #fff;" class="btnText">Update</span>
-            <i class="uil uil-navigator"></i>
-          </button>
+         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <!-- Update Button -->
+            <button type="submit" class="printing" style="background-color: #007bff; color: #fff;">
+              <span class="material-symbols-outlined">
+                update
+              </span>
+              Update Employee Details
+            </button>
+
+            <!-- Cancel Button -->
+            <button type="button" class="printing" style="background-color: #6c757d; color: #fff;" id="cancelBtn">
+              <span class="material-symbols-outlined">
+              cancel
+              </span>
+              Cancel
+            </button>
+          </div>
+
         </div>
       </form>
     </div>
@@ -171,6 +180,25 @@
         title: 'Error',
         text: result.message
       });
+    }
+  });
+
+
+    // Cancel button confirmation
+  document.getElementById('cancelBtn').addEventListener('click', async () => {
+    const confirm = await Swal.fire({
+      title: 'Cancel Editing?',
+      text: 'Unsaved changes will be lost. Continue?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, cancel',
+      cancelButtonText: 'Stay on page',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6'
+    });
+
+    if (confirm.isConfirmed) {
+      window.location.href = "{{ url_for('officer.employees') }}";
     }
   });
 </script>

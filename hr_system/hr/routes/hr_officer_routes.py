@@ -164,39 +164,52 @@ def edit_employee(employee_id):
         positions=positions
     )
 
-# Your existing view_attendance route for officer
 @hr_officer_bp.route('/attendance')
 @login_required
 @hr_officer_required
 def attendance():
     page = request.args.get('page', 1, type=int)
-    date_filter = request.args.get('date', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     employee_filter = request.args.get('employee', '')
+    department_filter = request.args.get('department', '')
 
-    query = Attendance.query.options(joinedload(Attendance.employee))
-    if date_filter:
+    query = Attendance.query.options(joinedload(Attendance.employee).joinedload(Employee.department))
+
+    # --- Apply Filters ---
+    # Filter by Date Range
+    if start_date and end_date:
         try:
-            query = query.filter_by(date=datetime.strptime(date_filter, '%Y-%m-%d').date())
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Attendance.date.between(start, end))
         except ValueError:
             flash('Invalid date format.', 'danger')
-            date_filter = '' # Clear invalid filter
-            return redirect(url_for('hr_officer.attendance', employee=employee_filter))
 
+    # Filter by Employee
     if employee_filter:
-        query = query.filter_by(employee_id=employee_filter)
+        query = query.filter(Attendance.employee_id == employee_filter)
+
+    # Filter by Department
+    if department_filter:
+        query = query.join(Employee).filter(Employee.department_id == department_filter)
 
     attendances = query.order_by(Attendance.date.desc(), Attendance.time_in.desc())\
-                       .paginate(page=page, per_page=10, error_out=False) # Reduced per_page for testing
+                       .paginate(page=page, per_page=10, error_out=False)
+
     employees = Employee.query.filter_by(active=True).order_by(Employee.first_name).all()
+    departments = Department.query.order_by(Department.name).all()
 
     return render_template(
         'hr/officer/officer_view_attend.html',
         attendances=attendances,
         employees=employees,
-        date_filter=date_filter,
-        employee_filter=employee_filter
+        departments=departments,
+        start_date=start_date,
+        end_date=end_date,
+        employee_filter=employee_filter,
+        department_filter=department_filter
     )
-
 
 
 # ----------------- CONFIG -----------------

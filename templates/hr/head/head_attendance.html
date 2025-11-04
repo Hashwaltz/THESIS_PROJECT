@@ -4,12 +4,8 @@
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1><b>Attendance Records</b></h1>
+      <h1><b>{{ department.name if department else 'Department' }} Attendance Records</b></h1>
   </header>
-
-  <!-- ============================
-       FILTER FORM
-  ============================= -->
   <div class="search-box">
     <form method="get" class="filter-form" id="filterForm">
       <div class="fields">
@@ -36,8 +32,10 @@
         <div class="input-field">
           <label>&nbsp;</label>
           <button type="submit" class="submit">
-            <span class="btnText">Filter</span>
-            <i class="uil uil-filter"></i>
+            <span class="material-symbols-outlined">
+            database_search
+            </span>
+            Filter
           </button>
         </div>
       </div>

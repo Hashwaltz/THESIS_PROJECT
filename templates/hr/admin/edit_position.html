@@ -1,42 +1,29 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %}Edit Department{% endblock %}
+{% block title %}Edit Position{% endblock %}
 
 {% block content %}
 <main class="content-wrap">
   <header class="content-head">
-    <h1><b>Edit Department Details</b></h1>
+    <h1><b>Edit Position Details</b></h1>
   </header>
 
   <div class="edit-container">
-    <form id="editDepartmentForm" method="POST" action="{{ url_for('hr_admin.edit_department', department_id=department.id) }}">
+    <form id="editPositionForm" method="POST" action="{{ url_for('hr_admin.edit_position', position_id=position.id) }}">
       {{ form.hidden_tag() if form else '' }}
       
       <div class="form first">
         <div class="details personal">
           <div class="fields">
-            <!-- Department Name -->
+            <!-- Position Name -->
             <div class="input-field">
-              <label>Department Name</label>
+              <label>Position Name</label>
               <input 
                 type="text" 
                 name="name" 
-                value="{{ department.name }}" 
-                placeholder="Enter department name"
+                value="{{ position.name }}" 
+                placeholder="Enter position name"
                 required
               />
-            </div>
-
-                        <!-- Department Head -->
-            <div class="input-field">
-              <label>Department Head</label>
-              <select name="dept_head">
-                <option value="">Select Department Head</option>
-                {% for emp in employees %}
-                  <option value="{{ emp.id }}" {% if department.head_id == emp.id %}selected{% endif %}>
-                    {{ emp.first_name }} {{ emp.last_name }}
-                  </option>
-                {% endfor %}
-              </select>
             </div>
 
             <!-- Description -->
@@ -44,14 +31,11 @@
               <label>Description</label>
               <textarea 
                 name="description" 
-                placeholder="Enter department description" 
+                placeholder="Enter position description" 
                 rows="4"
                 style="resize: none;"
-              >{{ department.description }}</textarea>
+              >{{ position.description }}</textarea>
             </div>
-
-
-
           </div>
         </div>
 
@@ -60,11 +44,11 @@
           <!-- Update Button -->
           <button type="submit" style="color: #fff;" class="printing">
             <span class="material-symbols-outlined">update</span>
-            Update Department
+            Update Position
           </button>
 
           <!-- Back Button -->
-          <a href="{{ url_for('hr_admin.view_departments') }}" style="background: #FF6347;" class="printing">
+          <a href="{{ url_for('hr_admin.view_positions') }}" style="background: #FF6347;" class="printing">
             <span class="material-symbols-outlined">cancel</span>
             Cancel
           </a>
@@ -77,12 +61,12 @@
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.getElementById("editDepartmentForm").addEventListener("submit", function(e){
+document.getElementById("editPositionForm").addEventListener("submit", function(e){
     e.preventDefault(); 
 
     Swal.fire({
         title: 'Are you sure?',
-        text: "Do you want to update this department?",
+        text: "Do you want to update this position?",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
@@ -100,7 +84,7 @@ document.getElementById("editDepartmentForm").addEventListener("submit", functio
             .then(data => {
                 if(data.status === "success"){
                     Swal.fire('Updated!', data.message, 'success').then(() => {
-                        window.location.href = "{{ url_for('hr_admin.view_departments') }}";
+                        window.location.href = "{{ url_for('hr_admin.view_positions') }}";
                     });
                 } else {
                     Swal.fire('Error!', data.message, 'error');

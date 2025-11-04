@@ -428,7 +428,7 @@ html {
 .search-box form .fields {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nonwrap;
   justify-content: space-between;
 }
 
@@ -501,6 +501,113 @@ html {
 .search-box form button:hover {
   background-color: #265df2;
 }
+
+
+/* Container */
+.search-container {
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  margin-top: 20px;
+}
+
+/* The form layout */
+.search-container form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Each field group */
+.search-container .input-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 180px;
+}
+
+/* Input & Select styling */
+.search-container .input-field input,
+.search-container .input-field select,
+.search-container .input-field input[type="date"] {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fafafa;
+  transition: 0.3s;
+}
+.filter-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-container .input-field input:focus,
+.search-container .input-field select:focus {
+  outline: none;
+  border-color: #4070f4;
+  box-shadow: 0 0 4px rgba(64,112,244,0.3);
+}
+
+/* Labels (optional) */
+.search-container .input-field label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 5px;
+  color: #2e2e2e;
+}
+
+/* Search button */
+.search-container button {
+  background-color: #4070f4;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: 0.3s;
+  height: 40px;
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+
+.search-container button:hover {
+  background-color: #265df2;
+}
+
+/* Optional icon alignment */
+.search-container button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .search-container form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-container .input-field {
+    width: 100%;
+  }
+
+  .search-container button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 
 .search-wrap {
   background: #202428;
@@ -582,7 +689,7 @@ html {
   margin: auto;
   margin-top: 2%;
   max-width: 80vw;
-  overflow: hidden;
+  overflow-y: auto;
   padding: 30px;
 }
 

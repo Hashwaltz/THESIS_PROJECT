@@ -8,9 +8,8 @@
   </header>
 
   <!-- 🔹 Filter Form -->
-  <section class="searching">
+  <div class="search-container">
     <form method="get">
-      <div class="fields">
         <div class="input-field">
           <label>Start Date:</label>
           <input type="date" name="start_date" value="{{ start_date }}">
@@ -22,7 +21,6 @@
         </div>
 
         <div class="input-field">
-          <label>Department:</label>
           <select name="department_id">
             <option value="">All Departments</option>
             {% for dept in departments %}
@@ -34,9 +32,8 @@
         </div>
 
         <div class="input-field">
-          <label>Leave Type:</label>
           <select name="leave_type_id">
-            <option value="">All Types</option>
+            <option value="">All Leave Types</option>
             {% for lt in leave_types %}
               <option value="{{ lt.id }}" {% if selected_leave_type == lt.id %}selected{% endif %}>
                 {{ lt.name }}
@@ -44,19 +41,31 @@
             {% endfor %}
           </select>
         </div>
-      </div>
 
       <!-- 🔹 Action Buttons -->
-      <div style="display: flex; gap: 15px; margin-top: 15px;">
-        <button type="submit">Filter</button>
-        <button type="button" class="printing" onclick="window.print()">Print</button>
+      <div class="input-field">
+        <button type="submit">
+          <span class="material-symbols-outlined">
+          text_fields_alt
+          </span>
+          Generate
+        </button>
+        <a href="{{ url_for('hr_admin.leave_report_word', 
+                    start_date=start_date, 
+                    end_date=end_date, 
+                    department_id=selected_dept, 
+                    leave_type_id=selected_leave_type) }}"
+            style="margin-bottom: 15px; display: flex; align-items: center; gap: 6px; text-decoration: none; background: #007bff; color: white; padding: 6px 12px; border-radius: 5px;">
+            <span class="material-symbols-outlined">download</span>
+            Export Leave Report (.docx)
+        </a>
+
       </div>
     </form>
   </section>
 
   <!-- 🔹 Report Results Table -->
   <div class="table-container">
-    <caption><b>Leave Summary Report</b></caption>
     <table>
       <thead>
         <tr>
