@@ -43,13 +43,14 @@ def dept_head_required(f):
     return decorated_function
 
 def employee_required(f):
-    """Decorator to require employee role"""
+    """Decorator to require employee or staff role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'employee':
+        if not current_user.is_authenticated or current_user.role not in ['employee', 'staff']:
             return jsonify({'error': 'Employee access required'}), 403
         return f(*args, **kwargs)
     return decorated_function
+
 
 # ------------------------
 # Date & Leave Utilities

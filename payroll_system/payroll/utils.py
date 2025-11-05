@@ -72,7 +72,7 @@ def admin_required(f):
 def staff_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_staff():
+        if not current_user.is_authenticated or current_user.role.lower() not in ["staff", "officer", "dept_head", "admin"]:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function

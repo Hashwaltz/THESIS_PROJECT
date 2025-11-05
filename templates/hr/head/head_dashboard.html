@@ -29,9 +29,9 @@ Swal.fire({
       <!-- Total Employees -->
       <div class="info-box">
         <div class="box-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094...Z" />
-          </svg>
+          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+            group
+          </span>
         </div>
         <div class="box-content">
           <span class="big">{{ total_employees }}</span>
@@ -42,9 +42,9 @@ Swal.fire({
       <!-- Recent Leave Requests -->
       <div class="info-box">
         <div class="box-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625...Z" />
-          </svg>
+         <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+            assignment_add
+          </span>
         </div>
         <div class="box-content">
           <span class="big">{{ recent_leaves|length }}</span>
@@ -55,9 +55,9 @@ Swal.fire({
       <!-- Present -->
       <div class="info-box">
         <div class="box-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836...Z" />
-          </svg>
+           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+            check_circle
+          </span>
         </div>
         <div class="box-content">
           <span class="big">{{ attendance_summary.total_present }}</span>
@@ -68,9 +68,9 @@ Swal.fire({
       <!-- Absent -->
       <div class="info-box">
         <div class="box-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
+           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+            cancel
+          </span>
         </div>
         <div class="box-content">
           <span class="big">{{ attendance_summary.total_absent }}</span>
@@ -81,9 +81,9 @@ Swal.fire({
       <!-- Late -->
       <div class="info-box">
         <div class="box-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5...Z" />
-          </svg>
+            <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+              schedule
+            </span>
         </div>
         <div class="box-content">
           <span class="big">{{ attendance_summary.total_late }}</span>
@@ -96,9 +96,6 @@ Swal.fire({
 
   <!-- Chart Section -->
   <section class="chart-section">
-    <header class="chart-header">
-      <h2><b>Monthly Attendance Overview</b></h2>
-    </header>
     <div class="chart-card">
       <canvas id="monthlyAttendanceChart"></canvas>
     </div>

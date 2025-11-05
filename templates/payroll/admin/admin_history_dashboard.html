@@ -15,22 +15,24 @@
       <table class="responsive-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Name</th>
+            <th>Department</th>
+            <th>Position</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for emp in employees %}
           <tr>
-            <td>{{ emp.id }}</td>
             <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>{{ emp.department.name if emp.department else 'N/A' }}</td>
+            <td>{{ emp.position.name if emp.position else 'N/A' }}</td>
             <td>
               <a href="{{ url_for('payroll_admin.view_employee_payroll_history', employee_id=emp.id) }}" class="btn-action">View Payroll</a>
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="3">No employees found.</td></tr>
+          <tr><td colspan="4">No employees found.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -40,7 +42,6 @@
       <table class="responsive-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Period Name</th>
             <th>Start Date</th>
             <th>End Date</th>
@@ -50,7 +51,6 @@
         <tbody>
           {% for period in periods %}
           <tr>
-            <td>{{ period.id }}</td>
             <td>{{ period.period_name }}</td>
             <td>{{ period.start_date.strftime('%b %d, %Y') }}</td>
             <td>{{ period.end_date.strftime('%b %d, %Y') }}</td>

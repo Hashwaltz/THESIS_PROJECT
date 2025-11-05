@@ -1,161 +1,91 @@
-{% extends 'staff_base.html' %}
-{% block title %}Admin-Dashboard {% endblock %}
-{% block content%}
+{% extends 'payroll/employee/employee_base.html' %}
+{% block title %}Payroll-Employee-Dashboard{% endblock %}
+{% block content %}
 
 <main class="content-wrap">
-  <!--<header class="content-head">
-    <h1><b>Staff Dashboard</b></h1>
+  <header class="content-head">
+    <h1><b>Employee Dashboard</b></h1>
   </header>
 
   <div class="content">
     <section class="info-boxes">
       <div class="info-box">
         <div class="box-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-          >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-          </svg>
+          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
+            attach_money
+          </span>
         </div>
-
         <div class="box-content">
-          <span class="big">{{total_employees}}</span>
-          Total Employees
+          <span class="big">₱ {{ total_disbursed or 0 | round(2) }}</span>
+          Total Salary Disbursed
         </div>
       </div>
 
       <div class="info-box">
         <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
-        </svg>
+          <i class="fa-solid fa-hand-holding-dollar"></i>
         </div>
-
         <div class="box-content">
-          <span class="big">{{ total_departments }}</span>
-          Total Departments
-        </div>
-      </div>
-
-      <div class="info-box">
-        <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-        </svg>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_users }}</span>
-          Active Users
-        </div>
-      </div>
-      
-
-        <div class="info-box">
-        <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-        </svg>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_inactive }}</span>
-          Inactive Users
-        </div>
-      </div>
-
-
-        <div class="info-box">
-        <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-        </svg>
-        </div>
-
-        <div class="box-content">
-          <span class="big">₱ {{ total_disbursed }}</span>
-          Salary Disbursed
-        </div>
-      </div>
-      
-
-      <div class="info-box">
-        <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-        </svg>
-        </div>
-
-        <div class="box-content">
-          <span class="big">₱ {{ total_deductions }}</span>
+          <span class="big">₱ {{ total_deductions or 0 | round(2) }}</span>
           Total Deductions
         </div>
       </div>
 
-
-       <div class="info-box">
+      <div class="info-box">
         <div class="box-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-        </svg>
+          <i class="fa-solid fa-gift"></i>
         </div>
-
         <div class="box-content">
-          <span class="big">₱ {{ total_allowances }}</span>
+          <span class="big">₱ {{ total_allowances or 0 | round(2) }}</span>
           Total Allowances
         </div>
       </div>
-      
-
     </section>
   </div>
-  <div class="chart-container">
-    <canvas id="monthlyAttendanceChart"></canvas> {# Changed ID to avoid conflict #}
-  </div>-->
-  </main>
 
+  <div class="chart-container" style="height: 400px; margin-top: 30px;">
+    <canvas id="monthlyEarningsChart"></canvas>
+  </div>
+</main>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {# Ensure Chart.js is loaded #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Data from Flask context for the monthly graph
-    const monthlyDates = {{ monthly_dates | tojson }};
-    const monthlyPresentCounts = {{ monthly_present_counts | tojson }};
-    const monthlyAbsentCounts = {{ monthly_absent_counts | tojson }};
-    const monthlyLateCounts = {{ monthly_late_counts | tojson }};
+    // ✅ Use the variables that are actually sent from Flask
+    const monthlyDates = {{ payroll_labels | tojson }};
+    const monthlyGross = {{ gross_earnings | tojson }};
+    const monthlyNet = {{ net_earnings | tojson }};
+    const monthlyDeductions = {{ deductions | tojson }};
 
-    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-    const monthlyAttendanceChart = new Chart(ctx, {
-      type: 'line', // 'line' chart is often better for time series
+    const ctx = document.getElementById('monthlyEarningsChart').getContext('2d');
+    const monthlyEarningsChart = new Chart(ctx, {
+      type: 'line',
       data: {
         labels: monthlyDates,
         datasets: [
           {
-            label: 'Present',
-            data: monthlyPresentCounts,
-            backgroundColor: 'rgba(75, 192, 192, 0.4)', // Light green
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            tension: 0.3, // Smoother lines
-            fill: true
-          },
-          {
-            label: 'Absent',
-            data: monthlyAbsentCounts,
-            backgroundColor: 'rgba(255, 99, 132, 0.4)',  // Light red
-            borderColor: 'rgba(255, 99, 132, 1)',
+            label: 'Gross Pay',
+            data: monthlyGross,
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 2,
             tension: 0.3,
             fill: true
           },
           {
-            label: 'Late',
-            data: monthlyLateCounts,
-            backgroundColor: 'rgba(255, 206, 86, 0.4)', // Light yellow/orange
-            borderColor: 'rgba(255, 206, 86, 1)',
+            label: 'Net Pay',
+            data: monthlyNet,
+            backgroundColor: 'rgba(75, 192, 192, 0.4)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'Deductions',
+            data: monthlyDeductions,
+            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+            borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 2,
             tension: 0.3,
             fill: true
@@ -169,39 +99,46 @@
           x: {
             title: {
               display: true,
-              text: 'Date of Month'
+              text: 'Pay Period'
             }
           },
           y: {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Number of Employees'
+              text: 'Amount (₱)'
             },
-            // Ensure Y-axis only shows whole numbers
             ticks: {
-                stepSize: 1,
-                precision: 0
+              callback: function(value) {
+                return '₱' + value.toLocaleString();
+              }
             }
           }
         },
         plugins: {
-            title: {
-                display: true,
-                text: 'Monthly Attendance Overview',
-                font: {
-                    size: 20,
-                    weight: 'bold'
-                }
-            },
-            tooltip: {
-                mode: 'index',
-                intersect: false
+          title: {
+            display: true,
+            text: 'Earnings Overview per Pay Period',
+            font: {
+              size: 20,
+              weight: 'bold'
             }
-        },
-        hover: {
-            mode: 'nearest',
-            intersect: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) label += ': ';
+                if (context.parsed.y !== null) {
+                  label += '₱' + context.parsed.y.toLocaleString();
+                }
+                return label;
+              }
+            }
+          },
+          legend: {
+            position: 'bottom'
+          }
         }
       }
     });

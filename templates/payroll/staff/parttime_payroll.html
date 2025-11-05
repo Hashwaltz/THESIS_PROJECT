@@ -81,7 +81,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-const workingHoursUrl = "{{ url_for('payroll_admin.get_working_hours') }}";
+const workingHoursUrl = "{{ url_for('payroll_staff.get_working_hours') }}";
 
 function parseInput(value) { return parseFloat(value.replace(/,/g, '')) || 0; }
 

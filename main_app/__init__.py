@@ -47,9 +47,13 @@ def create_app():
     # ===== Register Payroll Blueprints =====
     from payroll_system.payroll.routes.auth_routes import payroll_auth_bp
     from payroll_system.payroll.routes.payroll_admin_routes import payroll_admin_bp
+    from payroll_system.payroll.routes.payroll_staff_routes import payroll_staff_bp
+    from payroll_system.payroll.routes.employee_routes import payroll_employee_bp
 
     app.register_blueprint(payroll_auth_bp, url_prefix='/payroll/auth')
     app.register_blueprint(payroll_admin_bp, url_prefix='/payroll/admin')
+    app.register_blueprint(payroll_staff_bp, url_prefix='/payroll/staff')
+    app.register_blueprint(payroll_employee_bp, url_prefix='/payroll/employee')
 
     # ===== Landing page =====
     @app.route('/')

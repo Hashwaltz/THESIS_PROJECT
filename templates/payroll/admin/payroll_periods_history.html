@@ -27,7 +27,6 @@ History - {{ period.period_name }}{% endblock %} {% block content %}
           <th>Employee</th>
           <th>Gross Pay</th>
           <th>Net Pay</th>
-          <th>Status</th>
           <th>Processed At</th>
         </tr>
       </thead>
@@ -40,7 +39,6 @@ History - {{ period.period_name }}{% endblock %} {% block content %}
           </td>
           <td>₱ {{ "{:,.2f}".format(record.gross_pay) }}</td>
           <td>₱ {{ "{:,.2f}".format(record.net_pay) }}</td>
-          <td>{{ record.status }}</td>
           <td>
             {{ record.created_at.strftime('%b %d, %Y') if record.created_at else
             'N/A' }}

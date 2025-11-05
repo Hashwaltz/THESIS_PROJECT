@@ -8,10 +8,32 @@
   </header>
 
   <!-- Filter Form -->
-  <div class="filter-container searching">
-    <form method="get" id="attendanceFilterForm">
-      <div class="fields">
+  <div class="search-container">
+    <div class="filter-row">
+        <!-- Start and End Date Filters -->
+        <div class="input-field">
+          <label>Start Date</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        </div>
+      
 
+        <div class="input-field">
+          <label>End Date</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="printing">
+          <span class="material-symbols-outlined">
+              database_search
+          </span>
+          Filter
+        </button>
+        
+      </div>
+    <form method="get" id="attendanceFilterForm">
+      <div class="filter-row">
+        
         <!-- Department Filter -->
         <div class="input-field">
           <select id="department_filter" name="department">
@@ -35,28 +57,9 @@
             {% endfor %}
           </select>
         </div>
-
-        <!-- Start and End Date Filters -->
-        <div class="input-field">
-          <label style="margin-top: 20px;">Start Date</label>
-          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
-        </div>
-
-        <div class="input-field">
-          <label style="margin-top: 20px;">End Date</label>
-          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
-        </div>
-
-        <!-- Submit Button -->
-        <div class="input-field">
-          <button type="submit" class="printing">
-            <span class="material-symbols-outlined">
-                database_search
-            </span>
-            Filter
-          </button>
-        </div>
       </div>
+
+      
     </form>
   </div>
 

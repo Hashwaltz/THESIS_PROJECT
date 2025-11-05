@@ -47,12 +47,19 @@ payroll_admin_bp = Blueprint(
 @admin_required
 def payroll_dashboard():
     # ==============================
-    # EMPLOYEE & PAYROLL COUNTS
+    # EMPLOYEE & PAYROLL COUNTS (SAFE QUERIES)
     # ==============================
-    total_employees = Employee.query.filter_by(active=True).count()
-    total_payrolls = Payroll.query.count()
-    total_present = Attendance.query.filter_by(status='Present').count()
-    total_absent = Attendance.query.filter_by(status='Absent').count()
+    total_employees = Employee.query.filter_by(active=True).count() or 0
+    total_payrolls = Payroll.query.count() or 0
+    total_present = Attendance.query.filter(func.lower(Attendance.status) == 'present').count() or 0
+    total_absent = Attendance.query.filter(func.lower(Attendance.status) == 'absent').count() or 0
+
+    # ==============================
+    # DEPARTMENTS & USERS COUNTS
+    # ==============================
+    total_departments = Department.query.count() or 0
+    total_users = User.query.filter_by(active=True).count() or 0
+    total_inactive = User.query.filter_by(active=False).count() or 0
 
     # ==============================
     # MONTHLY ATTENDANCE DATA (for chart)
@@ -65,9 +72,9 @@ def payroll_dashboard():
     attendance_data = (
         db.session.query(
             Attendance.date,
-            func.sum(case((Attendance.status == "Present", 1), else_=0)).label("present"),
-            func.sum(case((Attendance.status == "Absent", 1), else_=0)).label("absent"),
-            func.sum(case((Attendance.status == "Late", 1), else_=0)).label("late")
+            func.sum(case((func.lower(Attendance.status) == "present", 1), else_=0)).label("present"),
+            func.sum(case((func.lower(Attendance.status) == "absent", 1), else_=0)).label("absent"),
+            func.sum(case((func.lower(Attendance.status) == "late", 1), else_=0)).label("late")
         )
         .filter(Attendance.date >= first_day, Attendance.date <= last_day)
         .group_by(Attendance.date)
@@ -79,17 +86,16 @@ def payroll_dashboard():
     # ENSURE BASELINE DATA FOR CHART
     # ==============================
     if not attendance_data:
-        # If no records this month → show 7 zero-value dates
-        fake_dates = [(first_day + timedelta(days=i)) for i in range(7)]
+        fake_dates = [first_day + timedelta(days=i) for i in range(7)]
         monthly_dates = [d.strftime("%Y-%m-%d") for d in fake_dates]
         monthly_present_counts = [0 for _ in fake_dates]
         monthly_absent_counts = [0 for _ in fake_dates]
         monthly_late_counts = [0 for _ in fake_dates]
     else:
         monthly_dates = [a.date.strftime("%Y-%m-%d") for a in attendance_data]
-        monthly_present_counts = [a.present for a in attendance_data]
-        monthly_absent_counts = [a.absent for a in attendance_data]
-        monthly_late_counts = [a.late for a in attendance_data]
+        monthly_present_counts = [a.present or 0 for a in attendance_data]
+        monthly_absent_counts = [a.absent or 0 for a in attendance_data]
+        monthly_late_counts = [a.late or 0 for a in attendance_data]
 
     # ==============================
     # RENDER TEMPLATE
@@ -100,14 +106,14 @@ def payroll_dashboard():
         total_payrolls=total_payrolls,
         total_present=total_present,
         total_absent=total_absent,
+        total_departments=total_departments,
+        total_users=total_users,
+        total_inactive=total_inactive,
         monthly_dates=monthly_dates,
         monthly_present_counts=monthly_present_counts,
         monthly_absent_counts=monthly_absent_counts,
         monthly_late_counts=monthly_late_counts,
     )
-
-
-
 
 @payroll_admin_bp.route('/process', methods=['GET'])
 @login_required
@@ -639,6 +645,7 @@ def edit_payroll(payroll_id):
         return redirect(url_for('payroll_admin.view_payrolls'))
 
     return render_template('payroll/admin/edit_payroll_details.html', payroll=payroll)
+
 
 @payroll_admin_bp.route('/payrolls')
 @login_required

@@ -19,7 +19,6 @@ block content %}
           <th>Period</th>
           <th>Gross Pay</th>
           <th>Net Pay</th>
-          <th>Status</th>
           <th>Processed At</th>
         </tr>
       </thead>
@@ -30,7 +29,6 @@ block content %}
           <td>{{ record.pay_period.period_name }}</td>
           <td>₱ {{ "{:,.2f}".format(record.gross_pay) }}</td>
           <td>₱ {{ "{:,.2f}".format(record.net_pay) }}</td>
-          <td>{{ record.status }}</td>
           <td>
             {{ record.created_at.strftime('%b %d, %Y') if record.created_at else
             'N/A' }}

@@ -83,7 +83,7 @@ def login():
                 return redirect(url_for('officer.hr_dashboard'))
             elif role == 'dept_head':
                 return redirect(url_for('dept_head.dashboard'))
-            elif role == 'employee':
+            elif role == 'employee' or role == 'staff':
                 return redirect(url_for('employee.dashboard'))
 
         else:

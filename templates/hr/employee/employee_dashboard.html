@@ -20,8 +20,8 @@
     <section class="info-boxes">
       <div class="info-box">
         <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 36px;">
-            task_alt
+           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
+            check_circle
           </span>
         </div>
         <div class="box-content">
@@ -32,7 +32,7 @@
 
       <div class="info-box">
         <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 36px;">
+           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
             cancel
           </span>
         </div>
@@ -44,7 +44,7 @@
 
       <div class="info-box">
         <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 36px;">
+           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
             schedule
           </span>
         </div>
@@ -53,23 +53,6 @@
           Late (This Month)
         </div>
       </div>
-    </section>
-
-    <!-- Leave Balances -->
-    <section class="info-boxes" style="margin-top: 20px;">
-      {% for leave_type, balance in leave_balances.items() %}
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 36px;">
-            spa
-          </span>
-        </div>
-        <div class="box-content">
-          <span class="big">{{ balance }}</span>
-          {{ leave_type }} Leave
-        </div>
-      </div>
-      {% endfor %}
     </section>
 
     <!-- Attendance Chart -->

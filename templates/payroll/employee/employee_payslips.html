@@ -1,0 +1,56 @@
+{% extends 'payroll/employee/employee_base.html' %}
+{% block title %}Employee - Payslips{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>My Payslips</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+      <!-- Payslips Table -->
+      <table class="responsive-table" style="margin-top: 10px;">
+        <caption><b>My Payslips</b></caption>
+        <thead>
+          <tr>
+            <th>Payslip No.</th>
+            <th>Pay Period</th>
+            <th>Gross Pay</th>
+            <th>Total Deductions</th>
+            <th>Net Pay</th>
+        <tbody>
+          {% for p in payslips.items %}
+          <tr>
+            <td data-label="Payslip No.">{{ p.payslip_number }}</td>
+            <td data-label="Pay Period">{{ p.pay_period_start.strftime('%Y-%m-%d') }} - {{ p.pay_period_end.strftime('%Y-%m-%d') }}</td>
+            <td data-label="Gross Pay">₱ {{ "{:,.2f}".format(p.gross_pay or 0) }}</td>
+            <td data-label="Total Deductions">₱ {{ "{:,.2f}".format(p.total_deductions or 0) }}</td>
+            <td data-label="Net Pay"><b>₱ {{ "{:,.2f}".format(p.net_pay or 0) }}</b></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align:center;">No payslips found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 15px;">
+        {% if payslips.has_prev %}
+          <a href="{{ url_for('employee.payslips', page=payslips.prev_num, search=search, status=selected_status) }}">Previous</a>
+        {% endif %}
+        Page {{ payslips.page }} of {{ payslips.pages }}
+        {% if payslips.has_next %}
+          <a href="{{ url_for('employee.payslips', page=payslips.next_num, search=search, status=selected_status) }}">Next</a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}

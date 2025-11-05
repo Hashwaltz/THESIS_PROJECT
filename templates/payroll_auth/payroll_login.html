@@ -32,7 +32,8 @@
                     {{ form.password(class="form-control", id="password", required=True, autocomplete="current-password") }}
                     <label for="password">Password</label>
                     
-                    <button type="button" class="password-toggle" id="passwordToggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+                      <!-- Toggle Button -->
+                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
                         <span class="toggle-icon">👁</span>
                     </button>
                 </div>
@@ -68,36 +69,33 @@
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function togglePassword() {
-    const password = document.getElementById("password");
-    const type = password.type === "password" ? "text" : "password";
-    password.type = type;
-}
+document.addEventListener('DOMContentLoaded', function () {
 
-// Check for flash messages from Flask
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      {% if category == 'danger' or category == 'error' %}
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Login',
-          text: '{{ message }}',
-          timer: 3000,
-          showConfirmButton: false
-        });
-      {% elif category == 'success' %}
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: '{{ message }}',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+    // Toggle password visibility
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('passwordToggle');
+    toggleBtn.addEventListener('click', function () {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        toggleBtn.classList.toggle('showing');
+    });
+
+    // Show only login error messages
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        {% if category == 'error' %}
+          Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: '{{ msg }}',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        {% endif %}
+      {% endfor %}
+    {% endwith %}
+
+});
+
 </script>
 
 {% endblock %}

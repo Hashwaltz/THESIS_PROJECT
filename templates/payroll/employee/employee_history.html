@@ -1,0 +1,62 @@
+{% extends 'payroll/employee/employee_base.html' %}
+{% block title %}My Payroll History{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Payroll History</b></h1>
+  </header>
+
+  <div class="table-container">
+    <div class="centered-container">
+
+      <!-- Payroll History Table -->
+      <table class="responsive-table" style="margin-top: 10px;">
+        <caption><b>All Payroll Records</b></caption>
+        <thead>
+          <tr>
+            <th>Payroll Period</th>
+            <th>Basic Salary</th>
+            <th>Gross Pay</th>
+            <th>Total Deductions</th>
+            <th>Net Pay</th>
+            <th>Date Processed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payroll in payrolls.items %}
+          <tr>
+            <td data-label="Payroll Period">
+              {{ payroll.pay_period_start.strftime('%Y-%m-%d') }} - {{ payroll.pay_period_end.strftime('%Y-%m-%d') }}
+            </td>
+            <td data-label="Basic Salary">₱ {{ "{:,.2f}".format(payroll.basic_salary or 0) }}</td>
+            <td data-label="Gross Pay">₱ {{ "{:,.2f}".format((payroll.net_pay or 0) + payroll.total_deductions_calc()) }}</td>
+            <td data-label="Total Deductions">₱ {{ "{:,.2f}".format(payroll.total_deductions_calc()) }}</td>
+            <td data-label="Net Pay"><b>₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}</b></td>
+            <td data-label="Date Processed">
+              {{ payroll.created_at.strftime('%Y-%m-%d') if payroll.created_at else '-' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6">No payroll records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        {% if payrolls.has_prev %}
+          <a href="{{ url_for('payroll_employee.payroll_history', page=payrolls.prev_num) }}">Previous</a>
+        {% endif %}
+        Page {{ payrolls.page }} of {{ payrolls.pages }}
+        {% if payrolls.has_next %}
+          <a href="{{ url_for('payroll_employee.payroll_history', page=payrolls.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

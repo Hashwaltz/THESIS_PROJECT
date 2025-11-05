@@ -71,7 +71,7 @@
             <td data-label="Date Hired">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
             <td data-label="Actions">
               <a href="{{ url_for('officer.edit_employee', employee_id=employee.id) }}" class="btn-action">
-                View | Edit
+                Edit
               </a>
             </td>
           </tr>

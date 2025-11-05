@@ -1,0 +1,162 @@
+{% extends 'payroll/employee/employee_base.html' %}
+{% block title %}My Payroll Summary{% endblock %}
+
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1><b>Payroll Summary</b></h1>
+  </header>
+
+  <div class="content">
+    <!-- Year Filter -->
+    <div class="filter-bar" style="margin-bottom: 20px;">
+      <form method="get" action="{{ url_for('payroll_employee.payroll_summary') }}">
+        <label for="year"><b>Select Year:</b></label>
+        <select name="year" id="year" onchange="this.form.submit()" 
+          style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc;">
+          {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <!-- Summary Info Boxes -->
+    <section class="info-boxes">
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">payments</span>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_gross_pay or 0) }}</span>
+          Total Gross Pay
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_deductions or 0) }}</span>
+          Total Deductions
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+        </div>
+        <div class="box-content">
+          <span class="big"><b>₱ {{ "{:,.2f}".format(summary.total_net_pay or 0) }}</b></span>
+          Total Net Pay
+        </div>
+      </div>
+    </section>
+
+    <!-- Contributions Section -->
+    <section class="info-boxes" style="margin-top: 20px;">
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">savings</span>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_sss or 0) }}</span>
+          Total SSS Contribution
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">health_and_safety</span>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_philhealth or 0) }}</span>
+          Total PhilHealth
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">home</span>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_pagibig or 0) }}</span>
+          Total Pag-IBIG
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="box-icon">
+          <span class="material-symbols-outlined">receipt_long</span>
+        </div>
+        <div class="box-content">
+          <span class="big">₱ {{ "{:,.2f}".format(summary.total_tax or 0) }}</span>
+          Total Tax Withheld
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary Chart -->
+    <div class="chart-container" style="margin-top: 40px;">
+      <canvas id="yearlySummaryChart"></canvas>
+    </div>
+
+  </div>
+</main>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('yearlySummaryChart').getContext('2d');
+    const data = {
+      labels: ['Gross Pay', 'Deductions', 'Net Pay', 'SSS', 'PhilHealth', 'Pag-IBIG', 'Tax'],
+      datasets: [{
+        label: '₱ Amount',
+        data: [
+          {{ summary.total_gross_pay or 0 }},
+          {{ summary.total_deductions or 0 }},
+          {{ summary.total_net_pay or 0 }},
+          {{ summary.total_sss or 0 }},
+          {{ summary.total_philhealth or 0 }},
+          {{ summary.total_pagibig or 0 }},
+          {{ summary.total_tax or 0 }}
+        ],
+        backgroundColor: [
+          'rgba(54, 162, 235, 0.6)',
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(255, 206, 86, 0.6)',
+          'rgba(153, 102, 255, 0.6)',
+          'rgba(255, 159, 64, 0.6)',
+          'rgba(100, 100, 100, 0.6)'
+        ],
+        borderColor: '#fff',
+        borderWidth: 1
+      }]
+    };
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Yearly Payroll Summary (₱)',
+            font: { size: 18, weight: 'bold' }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

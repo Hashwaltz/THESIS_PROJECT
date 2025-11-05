@@ -62,16 +62,15 @@ def login():
 # ROLE REDIRECT HELPER
 # =========================================================
 def redirect_by_role(role: str):
-    role = role.lower()
-    if role == "admin":
+    role = role.lower() if role else ""
+    if role in ["admin"]:
         return redirect(url_for("payroll_admin.payroll_dashboard"))
-    elif role in ["officer", "dept_head"]:
+    elif role in ["staff"]:
         return redirect(url_for("payroll_staff.dashboard"))
-    elif role == "employee":
+    elif role in ["employee", "officer", "dept_head"]:
         return redirect(url_for("payroll_employee.dashboard"))
-    else:
-        flash("Role not recognized.", "danger")
-        return redirect(url_for("payroll_auth.login"))
+    flash("Role not recognized.", "danger")
+    return redirect(url_for("payroll_auth.login"))
 
 
 # =========================================================

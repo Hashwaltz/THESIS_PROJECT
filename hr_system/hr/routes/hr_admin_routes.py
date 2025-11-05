@@ -13,6 +13,7 @@ from collections import defaultdict
 from hr_system.hr.functions import parse_date
 import os
 import csv
+import shutil
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from openpyxl import Workbook
@@ -657,6 +658,17 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
+# ----------------- CONFIG -----------------
+ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+UPLOAD_FOLDER = "uploads/attendance"
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+
 # ----------------- UPLOAD & PREVIEW -----------------
 @hr_admin_bp.route('/add_attendance', methods=['GET', 'POST'])
 @login_required
@@ -712,29 +724,49 @@ def add_attendance():
                     times = line.split()
                     time_in = times[0] if len(times) > 0 else None
                     time_out = times[1] if len(times) > 1 else None
-
                     day_value = attendance_date or datetime.now().date().isoformat()
 
-                    # Check if employee exists
+                    # Check DB for employee
+                    emp_match = None
                     try:
-                        emp_id_int = int(float(current_id))  # Convert Excel float to int
+                        emp_id_int = int(float(current_id))
                         emp_match = Employee.query.get(emp_id_int)
-                        matched = True if emp_match else False
                     except:
-                        matched = False
+                        emp_match = None
+
+                    # If matched, use DB name, else leave as Excel
+                    record_name = emp_match.get_full_name() if emp_match else current_name or "Unknown"
+                    matched = True if emp_match else False
 
                     records.append({
                         "Employee ID": current_id,
-                        "Name": current_name or "Unknown",
-                        "Department": current_dept or "Unknown",
+                        "Name": record_name,
+                        "Department": getattr(emp_match.department, 'name', 'N/A') if emp_match else "Unknown",
                         "Day": day_value,
-                        "Time In": time_in,
-                        "Time Out": time_out,
+                        "Time In": time_in if matched else None,
+                        "Time Out": time_out if matched else None,
                         "Matched": matched
                     })
 
+            # Include unmatched active employees from DB not in Excel
+            db_employees = Employee.query.filter_by(active=True).all()
+            excel_ids = {int(float(r["Employee ID"])) for r in records if r["Matched"]}
+
+            for emp in db_employees:
+                if emp.id not in excel_ids:
+                    # Mark absent
+                    records.append({
+                        "Employee ID": emp.id,
+                        "Name": emp.get_full_name(),
+                        "Department": getattr(emp.department, 'name', 'N/A') if emp.department else 'N/A',
+                        "Day": attendance_date or datetime.now().date().isoformat(),
+                        "Time In": None,
+                        "Time Out": None,
+                        "Matched": False
+                    })
+
             if not records:
-                flash("No valid attendance records found in file. Please check the format.", "danger")
+                flash("No valid attendance records found. Please check the Excel format.", "danger")
                 return redirect(request.url)
 
             session['import_attendance_preview'] = records
@@ -752,6 +784,7 @@ def add_attendance():
 @hr_admin_bp.route('/add_attendance/confirm', methods=['POST'])
 @login_required
 def confirm_import_attendance():
+    import os
     records = session.get('import_attendance_preview', [])
     if not records:
         flash("No attendance records to import.", "danger")
@@ -760,16 +793,23 @@ def confirm_import_attendance():
     imported_count = 0
 
     for row in records:
-        if not row.get("Matched"):
-            continue  # Only import matched employees
+        emp_id = row.get("Employee ID")
+        try:
+            emp_id_int = int(float(emp_id))
+        except:
+            continue
+
+        emp = Employee.query.get(emp_id_int)
+        if not emp:
+            continue
 
         day = row.get("Day")
         if not day or "Tabling" in str(day):
             continue
 
-        # Handle date ranges
-        date_list = []
+        # Convert day string to date
         try:
+            date_list = []
             if "~" in day:
                 start_str, end_str = day.split("~")
                 start_date = pd.to_datetime(start_str.strip(), errors='coerce').date()
@@ -782,19 +822,12 @@ def confirm_import_attendance():
                     date_list = [single_date]
         except:
             continue
-        if not date_list:
-            continue
-
-        emp_id = int(float(row.get("Employee ID")))
-        emp = Employee.query.get(emp_id)
-        if not emp:
-            continue
 
         time_in = row.get("Time In")
         time_out = row.get("Time Out")
 
-        # Insert attendance for all dates
         for att_date in date_list:
+            # ✅ Skip if already exists
             existing = Attendance.query.filter_by(employee_id=emp.id, date=att_date).first()
             if existing:
                 continue
@@ -815,11 +848,17 @@ def confirm_import_attendance():
 
     db.session.commit()
     session.pop('import_attendance_preview', None)
+
+    # ✅ Cleanup uploaded files
+    try:
+        if os.path.exists(UPLOAD_FOLDER):
+            for f in os.listdir(UPLOAD_FOLDER):
+                os.remove(os.path.join(UPLOAD_FOLDER, f))
+    except Exception as e:
+        print(f"⚠️ Cleanup error: {e}")
+
     flash(f"✅ Successfully imported {imported_count} attendance record(s).", "success")
     return redirect(url_for('hr_admin.add_attendance'))
-
-
-
 
 @hr_admin_bp.route('/attendance/<int:attendance_id>/edit', methods=['GET', 'POST'])
 @login_required

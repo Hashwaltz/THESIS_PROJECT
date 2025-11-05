@@ -21,6 +21,10 @@ class PayrollUser(UserMixin):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def is_staff(self):
+        """Return True if the user is a staff member (officer, dept_head, admin)."""
+        return self.role.lower() in ["staff","officer", "dept_head", "admin"]
 
     def __repr__(self):
         return f"<PayrollUser {self.email}>"
