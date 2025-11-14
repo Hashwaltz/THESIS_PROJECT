@@ -1,725 +1,214 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %}HRAdmin-Dashboard {%endblock %}
-{% block content%}
+{% block title %}Dashboard | HR Admin{% endblock %}
+{% block content %}
 
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Admin Dashboard</b></h1>
-  </header>
-  <div class="content">
-    <section class="info-boxes">
-      <div class="info-box">
-          <div class="box-icon">
-              <!-- Material Symbols Outlined icon -->
-              <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: bold;">
-                  group
-              </span>
-          </div>
+<section>
+  <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
+    <span class="material-symbols-outlined text-3xl">dashboard</span>
+    HR Dashboard
+  </h1>
 
-          <div class="box-content">
-              <span class="big">{{ total_employees }}</span>
-              Total Employees
-          </div>
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-blue-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-blue-400 text-3xl">groups</span>
       </div>
-
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: bold;">
-            apartment
-          </span>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_departments }}</span>
-          Total Departments
-        </div>
+      <div>
+        <p class="text-gray-400">Total Employees</p>
+        <h2 class="text-3xl font-bold text-blue-400 mt-2">{{ total_employees }}</h2>
       </div>
+    </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-         <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
-            account_box
-          </span>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_users }}</span>
-          Active Users
-        </div>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-emerald-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-emerald-400 text-3xl">person</span>
       </div>
-
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            account_circle_off
-          </span>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_inactive }}</span>
-          Inactive Users
-        </div>
+      <div>
+        <p class="text-gray-400">Active Employees</p>
+        <h2 class="text-3xl font-bold text-emerald-400 mt-2">{{ active_employees }}</h2>
       </div>
-    </section>
-  </div>
-  <div class="chart-container">
-     <canvas id="monthlyAttendanceChart"></canvas> {# Changed ID to avoid
-    conflict #}
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-yellow-400 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-yellow-400 text-3xl">apartment</span>
+      </div>
+      <div>
+        <p class="text-gray-400">Total Departments</p>
+        <h2 class="text-3xl font-bold text-yellow-400 mt-2">{{ total_departments }}</h2>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-pink-400 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-pink-400 text-3xl">event_available</span>
+      </div>
+      <div>
+        <p class="text-gray-400">Monthly Attendance</p>
+        <h2 class="text-3xl font-bold text-pink-400 mt-2">
+          {% if attendance_counts|length > 0 %}
+            {{ (attendance_counts|sum / attendance_counts|length)|round(2) }}%
+          {% else %}
+            0%
+          {% endif %}
+        </h2>
+      </div>
+    </div>
   </div>
 
-  <!--<section class="person-boxes">
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1495791085242-4abf2dcc3be3?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=30e718c0d1804c6365c73fc48419505d&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="Frederic Levy, Chief Executive Officer"
-          />
-        </div>
+  <!-- Graphs Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Employee Growth -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">trending_up</span> Employee Growth
+      </h2>
+      <canvas id="employeeChart" height="120"></canvas>
+    </div>
 
-        <div class="box-bio">
-          <h2 class="bio-name">Frederic Levy</h2>
-          <p class="bio-position">Chief Executive Officer</p>
-        </div>
+    <!-- Department Distribution -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">apartment</span> Department Distribution
+      </h2>
+      <canvas id="deptChart" height="120"></canvas>
+    </div>
+  </div>
 
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
+  <!-- Additional Graphs -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Employees per Barangay -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">location_city</span> Employees per Barangay
+      </h2>
+      <canvas id="barangayChart" height="120"></canvas>
+    </div>
 
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
+    <!-- Attendance Overview -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">event_available</span> Attendance Overview
+      </h2>
+      <canvas id="attendanceChart" height="120"></canvas>
+    </div>
 
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
+    <!-- Leave Requests -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">assignment</span> Leave Requests
+      </h2>
+      <canvas id="leaveChart" height="120"></canvas>
+    </div>
+  </div>
+</section>
 
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1495147334217-fcb3445babd5?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=35fc38ccdb26717006d7b48f79a2bb83&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="Robert Smaghi, Chairman"
-          />
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Robert Smaghi</h2>
-          <p class="bio-position">Chairman</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <span class="no-name">VD</span>
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Victoire Durand</h2>
-          <p class="bio-position">Head of Private Banking</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=afb35d2683e102d67bcd70b87b100723&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="John Connely, Head of Digital"
-          />
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">John Connely</h2>
-          <p class="bio-position">Head of Digital</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <span class="no-name">GR</span>
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Gerart Rotchet</h2>
-          <p class="bio-position">Head of Marketing</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1511019621063-1bd36feaece2?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=e81c3e03912567cee323dc6993f88fe4&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="Nathalie Mestralet, Head of Trading"
-          />
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Nathalie Mestralet</h2>
-          <p class="bio-position">Head of Trading</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=5d43ec18ec2cf6ff854513b9e8395c1e&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="Alexandra Johnson, Head of Human Resources"
-          />
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Alexandra Johnson</h2>
-          <p class="bio-position">Head of Human Resources</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="person-box">
-        <div class="box-avatar">
-          <img
-            src="https://images.unsplash.com/photo-1506085452766-c330853bea50?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=c90ef12b4dc22a4a4c277dd056dd0b7e&amp;auto=format&amp;fit=crop&amp;w=140&amp;q=80"
-            alt="Herve De Rinel, Head of International"
-          />
-        </div>
-
-        <div class="box-bio">
-          <h2 class="bio-name">Herve De Rinel</h2>
-          <p class="bio-position">Head of International</p>
-        </div>
-
-        <div class="box-actions">
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M6.855 14.365l-1.817 6.36a1.001 1.001 0 0 0 1.517 1.106L12 18.202l5.445 3.63a1 1 0 0 0 1.517-1.106l-1.817-6.36 4.48-3.584a1.001 1.001 0 0 0-.461-1.767l-5.497-.916-2.772-5.545c-.34-.678-1.449-.678-1.789 0L8.333 8.098l-5.497.916a1 1 0 0 0-.461 1.767l4.48 3.584zm2.309-4.379c.315-.053.587-.253.73-.539L12 5.236l2.105 4.211c.144.286.415.486.73.539l3.79.632-3.251 2.601a1.003 1.003 0 0 0-.337 1.056l1.253 4.385-3.736-2.491a1 1 0 0 0-1.109-.001l-3.736 2.491 1.253-4.385a1.002 1.002 0 0 0-.337-1.056l-3.251-2.601 3.79-.631z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M18 18H6V6h7V4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8h-2v7z"
-              ></path>
-              <path
-                d="M17.465 5.121l-6.172 6.172 1.414 1.414 6.172-6.172 2.12 2.121L21 3h-5.657z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 3C6.486 3 2 6.364 2 10.5c0 2.742 1.982 5.354 5 6.678V21a.999.999 0 0 0 1.707.707l3.714-3.714C17.74 17.827 22 14.529 22 10.5 22 6.364 17.514 3 12 3zm0 13a.996.996 0 0 0-.707.293L9 18.586V16.5a1 1 0 0 0-.663-.941C5.743 14.629 4 12.596 4 10.5 4 7.468 7.589 5 12 5s8 2.468 8 5.5-3.589 5.5-8 5.5z"
-              ></path>
-            </svg>
-          </button>
-
-          <button>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 8L17 8 17 11 14 11 14 13 17 13 17 16 19 16 19 13 22 13 22 11 19 11zM3 20h10c.553 0 1-.447 1-1v-.5c0-2.54-1.212-4.651-3.077-5.729C11.593 12.063 12 11.1 12 10c0-2.28-1.72-4-4-4s-4 1.72-4 4c0 1.1.407 2.063 1.077 2.771C3.212 13.849 2 15.96 2 18.5V19C2 19.553 2.448 20 3 20zM6 10c0-1.178.822-2 2-2s2 .822 2 2-.822 2-2 2S6 11.178 6 10zM8 14c2.43 0 3.788 1.938 3.977 4H4.023C4.212 15.938 5.57 14 8 14z"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </section>-->
-</main>
-
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{# Ensure Chart.js is loaded #}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Data from Flask context for the monthly graph
-    const monthlyDates = {{ monthly_dates | tojson }};
-    const monthlyPresentCounts = {{ monthly_present_counts | tojson }};
-    const monthlyAbsentCounts = {{ monthly_absent_counts | tojson }};
-    const monthlyLateCounts = {{ monthly_late_counts | tojson }};
-
-    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-    const monthlyAttendanceChart = new Chart(ctx, {
-      type: 'line', // 'line' chart is often better for time series
-      data: {
-        labels: monthlyDates,
-        datasets: [
-          {
-            label: 'Present',
-            data: monthlyPresentCounts,
-            backgroundColor: 'rgba(75, 192, 192, 0.4)', // Light green
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            tension: 0.3, // Smoother lines
-            fill: true
-          },
-          {
-            label: 'Absent',
-            data: monthlyAbsentCounts,
-            backgroundColor: 'rgba(255, 99, 132, 0.4)',  // Light red
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          },
-          {
-            label: 'Late',
-            data: monthlyLateCounts,
-            backgroundColor: 'rgba(255, 206, 86, 0.4)', // Light yellow/orange
-            borderColor: 'rgba(255, 206, 86, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          }
-        ]
+  // Employee Growth (Line)
+  const ctx1 = document.getElementById("employeeChart").getContext("2d");
+  new Chart(ctx1, {
+    type: "line",
+    data: {
+      labels: {{ growth_labels|tojson }},
+      datasets: [{
+        label: "Employees",
+        data: {{ growth_counts|tojson }},
+        borderColor: "#60a5fa",
+        backgroundColor: "rgba(59,130,246,0.2)",
+        tension: 0.3,
+        fill: true,
+      }],
+    },
+    options: {
+      scales: {
+        x: { ticks: { color: "#9ca3af" } },
+        y: { ticks: { color: "#9ca3af" } },
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Date of Month'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Employees'
-            },
-            // Ensure Y-axis only shows whole numbers
-            ticks: {
-                stepSize: 1,
-                precision: 0
-            }
-          }
-        },
-        plugins: {
-            title: {
-                display: true,
-                text: 'Monthly Attendance Overview',
-                font: {
-                    size: 20,
-                    weight: 'bold'
-                }
-            },
-            tooltip: {
-                mode: 'index',
-                intersect: false
-            }
-        },
-        hover: {
-            mode: 'nearest',
-            intersect: true
-        }
-      }
-    });
+      plugins: { legend: { labels: { color: "#d1d5db" } } },
+    },
+  });
+
+  // Department Distribution (Doughnut)
+  const ctx2 = document.getElementById("deptChart").getContext("2d");
+  new Chart(ctx2, {
+    type: "doughnut",
+    data: {
+      labels: {{ dept_labels|tojson }},
+      datasets: [{
+        data: {{ dept_counts|tojson }},
+        backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#f87171", "#a855f7"],
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      plugins: { legend: { labels: { color: "#d1d5db" } } },
+    },
+  });
+
+  // Employees per Barangay (Bar)
+  const ctx3 = document.getElementById("barangayChart").getContext("2d");
+  new Chart(ctx3, {
+    type: "bar",
+    data: {
+      labels: {{ barangay_labels|tojson }},
+      datasets: [{
+        label: "Employees",
+        data: {{ barangay_counts|tojson }},
+        backgroundColor: ["#3b82f6", "#10b981", "#f43f5e", "#f59e0b", "#8b5cf6"],
+      }],
+    },
+    options: {
+      scales: {
+        x: { ticks: { color: "#9ca3af" } },
+        y: { ticks: { color: "#9ca3af" } },
+      },
+      plugins: { legend: { labels: { color: "#d1d5db" } } },
+    },
+  });
+
+  // Attendance Overview (Line)
+  const ctx4 = document.getElementById("attendanceChart").getContext("2d");
+  new Chart(ctx4, {
+    type: "line",
+    data: {
+      labels: {{ attendance_labels|tojson }},
+      datasets: [{
+        label: "Attendance %",
+        data: {{ attendance_counts|tojson }},
+        borderColor: "#38bdf8",
+        backgroundColor: "rgba(56,189,248,0.3)",
+        tension: 0.4,
+        fill: true,
+      }],
+    },
+    options: {
+      scales: {
+        x: { ticks: { color: "#9ca3af" } },
+        y: { ticks: { color: "#9ca3af" } },
+      },
+      plugins: { legend: { labels: { color: "#d1d5db" } } },
+    },
+  });
+
+  // Leave Requests (Pie)
+  const ctx5 = document.getElementById("leaveChart").getContext("2d");
+  new Chart(ctx5, {
+    type: "pie",
+    data: {
+      labels: {{ leave_labels|tojson }},
+      datasets: [{
+        data: {{ leave_counts|tojson }},
+        backgroundColor: ["#10b981", "#facc15", "#ef4444"],
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      plugins: { legend: { labels: { color: "#d1d5db" } } },
+    },
   });
 </script>
+
 {% endblock %}

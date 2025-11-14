@@ -38,7 +38,7 @@ def hr_dashboard():
     present_count_today = len([r for r in today_attendance_records if r.status == "Present"])
     absent_count_today = len([r for r in today_attendance_records if r.status == "Absent"])
     
-    total_active_employees = Employee.query.filter_by(active=True).count() or 0
+    total_active_employees = Employee.query.filter_by(status="Active").count() or 0
 
     # --- Graph Data (Current Month Data) ---
     start_date, end_date = get_current_month_range()

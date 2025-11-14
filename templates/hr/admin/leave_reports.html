@@ -1,97 +1,77 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %}HR Admin - Leave Reports{% endblock %}
+{% block title %}HR Admin - Leave Report{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Leave Reports</b></h1>
+<main class="p-6 text-gray-100">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-blue-400">Leave Reports</h1>
+    <p class="text-gray-400">View all leaves and insights for the selected period.</p>
   </header>
 
-  <!-- 🔹 Filter Form -->
-  <div class="search-container">
-    <form method="get">
-        <div class="input-field">
-          <label>Start Date:</label>
-          <input type="date" name="start_date" value="{{ start_date }}">
-        </div>
+  <!-- Filter -->
+  <form method="get" class="flex flex-wrap gap-4 mb-6">
+    <input type="date" name="start_date" value="{{ start_date }}" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
+    <input type="date" name="end_date" value="{{ end_date }}" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
+    <select name="department_id" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+        <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-700 transition">Filter</button>
+    <a href="{{ url_for('hr_admin.leave_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
+       class="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700 transition flex items-center gap-2 text-white">
+      <span class="material-symbols-outlined">download</span> Export Word
+    </a>
+  </form>
 
-        <div class="input-field">
-          <label>End Date:</label>
-          <input type="date" name="end_date" value="{{ end_date }}">
-        </div>
-
-        <div class="input-field">
-          <select name="department_id">
-            <option value="">All Departments</option>
-            {% for dept in departments %}
-              <option value="{{ dept.id }}" {% if selected_dept == dept.id %}selected{% endif %}>
-                {{ dept.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="input-field">
-          <select name="leave_type_id">
-            <option value="">All Leave Types</option>
-            {% for lt in leave_types %}
-              <option value="{{ lt.id }}" {% if selected_leave_type == lt.id %}selected{% endif %}>
-                {{ lt.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-      <!-- 🔹 Action Buttons -->
-      <div class="input-field">
-        <button type="submit">
-          <span class="material-symbols-outlined">
-          text_fields_alt
-          </span>
-          Generate
-        </button>
-        <a href="{{ url_for('hr_admin.leave_report_word', 
-                    start_date=start_date, 
-                    end_date=end_date, 
-                    department_id=selected_dept, 
-                    leave_type_id=selected_leave_type) }}"
-            style="margin-bottom: 15px; display: flex; align-items: center; gap: 6px; text-decoration: none; background: #007bff; color: white; padding: 6px 12px; border-radius: 5px;">
-            <span class="material-symbols-outlined">download</span>
-            Export Leave Report (.docx)
-        </a>
-
-      </div>
-    </form>
-  </section>
-
-  <!-- 🔹 Report Results Table -->
-  <div class="table-container">
-    <table>
+  <!-- Table -->
+  <div class="overflow-x-auto bg-[#1e293b] p-4 rounded-2xl shadow-xl">
+    <table class="w-full border-collapse table-auto">
       <thead>
-        <tr>
-          <th>Employee</th>
-          <th>Department</th>
-          <th>Total Leave Days</th>
-          <th>No. of Leaves</th>
+        <tr class="text-blue-400 font-semibold">
+          <th class="px-4 py-2 text-left">Employee</th>
+          <th class="px-4 py-2 text-left">Department</th>
+          <th class="px-4 py-2 text-left">Leave Type</th>
+          <th class="px-4 py-2 text-left">Start Date</th>
+          <th class="px-4 py-2 text-left">End Date</th>
+          <th class="px-4 py-2 text-left">Days</th>
+          <th class="px-4 py-2 text-left">Status</th>
         </tr>
       </thead>
       <tbody>
-        {% if results %}
-          {% for row in results %}
-            <tr>
-              <td data-label="Employee">{{ row.employee_name }}</td>
-              <td data-label="Department">{{ row.department_name }}</td>
-              <td data-label="Total Leave Days">{{ row.total_leave_days or 0 }}</td>
-              <td data-label="No. of Leaves">{{ row.leave_count or 0 }}</td>
-            </tr>
-          {% endfor %}
+        {% for lv in leave_data %}
+        <tr class="border-t border-gray-700">
+          <td class="px-4 py-2">{{ lv.employee.get_full_name() }}</td>
+          <td class="px-4 py-2">{{ lv.employee.department.name if lv.employee.department else "N/A" }}</td>
+          <td class="px-4 py-2">{{ lv.leave_type.name if lv.leave_type else "N/A" }}</td>
+          <td class="px-4 py-2">{{ lv.start_date }}</td>
+          <td class="px-4 py-2">{{ lv.end_date }}</td>
+          <td class="px-4 py-2">{{ lv.days_requested }}</td>
+          <td class="px-4 py-2">{{ lv.status }}</td>
+        </tr>
         {% else %}
-          <tr>
-            <td colspan="4" style="text-align:center;">No leave records found.</td>
-          </tr>
-        {% endif %}
+        <tr>
+          <td colspan="7" class="text-center text-gray-400 py-4">No leaves found</td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Insights -->
+  <div class="mt-6 p-4 bg-[#0f172a] rounded-xl shadow-md">
+    <h2 class="text-xl font-bold text-blue-400 mb-2">Overall Insights</h2>
+    <p>Total Leave Requests: {{ total_leaves }}</p>
+    <p>Average Days per Leave: {{ avg_days_per_leave }}</p>
+    <p>Most Common Leave Type: {{ most_common_leave_type }}</p>
+
+    <h2 class="text-xl font-bold text-blue-400 mt-4 mb-2">Department-wise Summary</h2>
+    <ul class="list-disc list-inside">
+      {% for dept, data in dept_summary.items() %}
+        <li><span class="font-semibold text-blue-300">{{ dept }}</span>: Total Leaves: {{ data.total }}, Avg Days: {{ data.avg_days }}</li>
+      {% endfor %}
+    </ul>
   </div>
 </main>
 {% endblock %}

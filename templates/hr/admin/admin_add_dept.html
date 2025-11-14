@@ -1,46 +1,58 @@
 {% extends 'hr/admin/admin_base.html' %}
-{% block title %} HR Admin - Add Department {% endblock %}
+{% block title %}Add Department | HR Admin{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Add Department</b></h1>
+<main class="p-6 md:p-10 space-y-6 text-white">
+
+  <!-- Page Header -->
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold flex items-center gap-2">
+      <span class="material-symbols-outlined text-blue-400 text-4xl">add_business</span>
+      Add Department
+    </h1>
   </header>
 
-  <div class="department-container">
-    <header>Department Details</header>
-    <form method="POST" action="{{ url_for('hr_admin.add_department') }}">
-      {{ form.hidden_tag() }}
+  <!-- Department Form -->
+  <section class="bg-gray-800 rounded-2xl p-6 shadow-lg max-w-3xl mx-auto">
+    <h2 class="text-xl font-semibold mb-4">Department Details</h2>
+    <form method="POST" class="space-y-6">
 
-      <div class="form first">
-        <div class="details personal">
-          <div class="fields">
-            <div class="input-field">
-              <label>Department Name</label>
-              {{ form.name(class="form-control", placeholder="Enter department name", required=true) }}
-            </div>
+      <!-- Department Name -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Department Name <span class="text-red-500">*</span></label>
+        <input type="text" name="name" placeholder="Enter department name" required
+               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+      </div>
 
-            <div class="input-field">
-              <label style="margin-bottom: 5px">Description</label>
-              {{ form.description(class="form-control", placeholder="Enter department description") }}
-            </div>
+      <!-- Description -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Description</label>
+        <textarea name="description" rows="4" placeholder="Enter department description"
+                  class="bg-gray-900 text-white rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+      </div>
 
-            <div class="input-field">
-              <label>Department Head</label>
-              {{ form.head_id(class="form-control") }}
-            </div>
-          </div>
-        </div>
+      <!-- Department Head -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Department Head</label>
+        <select name="head_id" class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">Select Department Head</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}">{{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-        <button type="submit" class="submit">
-          <span class="material-symbols-outlined">
-          add_business
-          </span>
+      <!-- Submit Button -->
+      <div class="flex justify-end">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 transition">
+          <span class="material-symbols-outlined">add_business</span>
           Add Department
         </button>
       </div>
+
     </form>
-  </div>
+  </section>
 </main>
 
 <!-- SweetAlert -->
@@ -58,10 +70,7 @@ document.addEventListener("DOMContentLoaded", function() {
             showConfirmButton: false,
             timer: 2000,
             timerProgressBar: true,
-            willClose: () => {
-              // Redirect to department list after 2 seconds
-              window.location.href = "{{ url_for('hr_admin.view_departments') }}";
-            }
+            willClose: () => { window.location.href = "{{ url_for('hr_admin.view_departments') }}"; }
           });
         {% elif category == 'error' %}
           Swal.fire({

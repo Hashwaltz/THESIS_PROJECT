@@ -5,7 +5,7 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 
 from hr_system.config import Config
-from main_app.extensions import db, login_manager, migrate
+from main_app.extensions import db, login_manager, migrate, mail
 
 
 def create_app():

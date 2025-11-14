@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
-from main_app.extensions import db, login_manager, migrate
+from main_app.extensions import db, login_manager, migrate, mail
 
 # Import shared User model
 from hr_system.hr.models.user import User  
@@ -23,6 +23,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    mail.init_app(app)
 
     # ===== User loader =====
     @login_manager.user_loader
@@ -62,5 +63,20 @@ def create_app():
         Landing page with buttons to HR or Payroll login.
         """
         return render_template('index.html')
+
+    @app.route('/features')
+    def features():
+        """
+        Landing page with buttons to HR or Payroll login.
+        """
+        return render_template('features.html')
+    
+
+    @app.route('/about')
+    def about():
+        """
+        Landing page with buttons to HR or Payroll login.
+        """
+        return render_template('about.html')
 
     return app

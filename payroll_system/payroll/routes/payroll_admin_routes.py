@@ -49,7 +49,7 @@ def payroll_dashboard():
     # ==============================
     # EMPLOYEE & PAYROLL COUNTS (SAFE QUERIES)
     # ==============================
-    total_employees = Employee.query.filter_by(active=True).count() or 0
+    total_employees = Employee.query.filter_by(status="Active").count() or 0
     total_payrolls = Payroll.query.count() or 0
     total_present = Attendance.query.filter(func.lower(Attendance.status) == 'present').count() or 0
     total_absent = Attendance.query.filter(func.lower(Attendance.status) == 'absent').count() or 0
@@ -119,7 +119,7 @@ def payroll_dashboard():
 @login_required
 def process_payroll():
     # Get all active employees
-    employees = Employee.query.filter_by(active=True).all()
+    employees = Employee.query.filter_by(status="Active").all()
 
     # Get unique departments
     departments = Department.query.all()
@@ -127,7 +127,7 @@ def process_payroll():
     # Count employees per department
     dept_data = []
     for dept in departments:
-        count = Employee.query.filter_by(active=True, department_id=dept.id).count()
+        count = Employee.query.filter_by(status="Active", department_id=dept.id).count()
         dept_data.append({
             "id": dept.id,
             "name": dept.name,
@@ -149,7 +149,7 @@ def payroll_departments():
     # Count active employees in each department
     dept_list = []
     for dept in departments:
-        employee_count = Employee.query.filter_by(active=True, department_id=dept.id).count()
+        employee_count = Employee.query.filter_by(status="Active", department_id=dept.id).count()
         dept_list.append({
             "id": dept.id,
             "name": dept.name,
@@ -168,7 +168,7 @@ def department_employees(department_id):
     
     # Correct query
     employees = Employee.query.filter_by(
-        active=True,
+        status="Active",
         department_id=department_id
     ).order_by(
         asc(Employee.last_name), asc(Employee.first_name)
@@ -190,7 +190,7 @@ def parttime_payroll():
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
     # Filter employees by department AND employment type "Part-Time"
-    query = Employee.query.filter_by(active=True)
+    query = Employee.query.filter_by(status="Active")
     if department_id:
         query = query.filter_by(department_id=department_id)
     
@@ -324,7 +324,7 @@ def regular_payroll():
     ]
 
     # Filter employees by department AND employment type "Regular"
-    query = Employee.query.filter_by(active=True)
+    query = Employee.query.filter_by(status="Active")
     if department_id:
         query = query.filter_by(department_id=department_id)
 
@@ -462,7 +462,7 @@ def casual_payroll():
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
     # Filter employees by department AND employment type "Casual"
-    query = Employee.query.filter_by(active=True)
+    query = Employee.query.filter_by(status="Active")
     if department_id:
         query = query.filter_by(department_id=department_id)
 

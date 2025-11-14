@@ -1,34 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}GovHRPay{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{{ url_for('payroll_auth.static', filename='img/favicon.avif') }}">   
-    <link rel="stylesheet" href="{{ url_for('payroll_auth.static', filename='css/style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}GovHRPay | Payroll System{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('payroll_auth.static', filename='img/favicon.avif') }}" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-     <header class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('index') }}" class="brand">
-                <img src="{{ url_for('payroll_auth.static', filename='img/logo2.avif') }}" alt="Logo" class="nav-logo">
-                Payroll System
-            </a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="{{ url_for('index') }}">Home</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
 
-    
+<body class="bg-green-50 text-gray-900 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <header class="bg-green-600 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <!-- Logo -->
+      <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+        <img src="{{ url_for('payroll_auth.static', filename='img/logo2.avif') }}" alt="Logo" class="w-10 h-10 rounded-full object-cover" />
+        <span class="text-xl font-semibold">Payroll System</span>
+      </a>
+
+      <!-- Nav Links -->
+      <nav>
+        <ul class="flex items-center space-x-6">
+          <li>
+            <a href="{{ url_for('index') }}" class="hover:text-green-200 transition font-medium">Home</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <main class="flex-1 flex justify-center items-center py-10">
     {% block content %}
-    <!-- Page-specific content goes here -->
     {% endblock %}
-    
-    <script src="{{ url_for('payroll_auth.static', filename='js/form-utils.js') }}"></script>
-    <script src="{{ url_for('payroll_auth.static', filename='js/script.js') }}"></script>
-    {% block scripts %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-green-700 text-green-100 py-4 text-center text-sm border-t border-green-500">
+    &copy; {{ current_year or '2025' }} GovHRPay | Payroll System. All rights reserved.
+  </footer>
+
+  {% block scripts %}{% endblock %}
 </body>
 </html>

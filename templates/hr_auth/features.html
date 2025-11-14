@@ -1,0 +1,136 @@
+{% extends "hr_auth/hr_base.html" %}
+{% block title %}Features | GovHRPay{% endblock %}
+
+{% block content %}
+<section class="w-full bg-gray-950 text-gray-100">
+
+  <!-- HERO SECTION -->
+  <div class="relative bg-gradient-to-br from-blue-800 to-indigo-900 py-20 text-center">
+    <div class="max-w-4xl mx-auto px-6">
+      <h1 class="text-5xl font-bold mb-4 text-white">System Features</h1>
+      <p class="text-gray-200 text-lg leading-relaxed">
+        Explore the core capabilities of GovHRPay — a modern, efficient, and secure platform designed for government HR and payroll management.
+      </p>
+    </div>
+  </div>
+
+  <!-- FEATURES GRID -->
+  <section id="features" class="py-20 bg-gray-950">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-400 mb-12">Key Features</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+        
+        <!-- Feature 1 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-users text-5xl text-blue-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Employee Management</h3>
+          <p class="text-gray-400">
+            Maintain detailed employee records including personal info, job details, and employment history — all in one secure system.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-calendar-check text-5xl text-green-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Attendance Tracking</h3>
+          <p class="text-gray-400">
+            Monitor employee attendance and leaves in real time using biometric or GSM-based integration for accuracy.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-coins text-5xl text-yellow-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Automated Payroll</h3>
+          <p class="text-gray-400">
+            Automatically calculate salaries, deductions, and benefits, and generate payslips instantly without manual computation.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-chart-line text-5xl text-pink-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Analytics & Reports</h3>
+          <p class="text-gray-400">
+            Get insightful analytics for HR and payroll data. Generate real-time summaries and printable reports for management.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-lock text-5xl text-red-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Secure Access Control</h3>
+          <p class="text-gray-400">
+            Ensure data privacy through multi-role authentication and encrypted data access for HR officers, admins, and employees.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+          <i class="fas fa-sync-alt text-5xl text-cyan-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">HR & Payroll Integration</h3>
+          <p class="text-gray-400">
+            Sync HR updates automatically with payroll data — no need for duplicate entries or manual syncing.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULES SECTION -->
+  <section id="modules" class="py-20 bg-gray-900">
+    <div class="max-w-7xl mx-auto text-center px-6">
+      <h2 class="text-3xl font-bold text-blue-400 mb-12">System Modules</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+
+        <!-- Module 1 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-user-tie text-4xl text-blue-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">HR Management</h4>
+          <p class="text-gray-400 text-sm">Manages employee records, positions, and HR operations efficiently.</p>
+        </div>
+
+        <!-- Module 2 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-file-invoice-dollar text-4xl text-green-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">Payroll Management</h4>
+          <p class="text-gray-400 text-sm">Automates salary computations, deductions, and payroll releases.</p>
+        </div>
+
+        <!-- Module 3 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-clock text-4xl text-yellow-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">Attendance System</h4>
+          <p class="text-gray-400 text-sm">Tracks daily time-ins/outs with manual override and reports.</p>
+        </div>
+
+        <!-- Module 4 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-chart-pie text-4xl text-pink-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">Analytics Dashboard</h4>
+          <p class="text-gray-400 text-sm">Provides visual statistics for HR performance and payroll trends.</p>
+        </div>
+
+        <!-- Module 5 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-bell text-4xl text-cyan-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">Notification Center</h4>
+          <p class="text-gray-400 text-sm">Real-time alerts for leave requests, salary releases, and updates.</p>
+        </div>
+
+        <!-- Module 6 -->
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-database text-4xl text-purple-400 mb-3"></i>
+          <h4 class="text-lg font-semibold mb-2">Centralized Database</h4>
+          <p class="text-gray-400 text-sm">Ensures unified access to all HR and Payroll data in one system.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-950 text-gray-400 text-center py-6">
+    <p>&copy; 2025 GovHRPay | All rights reserved.</p>
+  </footer>
+</section>
+{% endblock %}

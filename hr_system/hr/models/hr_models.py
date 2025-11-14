@@ -20,7 +20,11 @@ class Employee(db.Model):
     middle_name = db.Column(db.String(100))
     email = db.Column(db.String(150), unique=True, nullable=False)
     phone = db.Column(db.String(20))
-    address = db.Column(db.Text)
+    barangay = db.Column(db.String(100))
+    municipality = db.Column(db.String(100))
+    province = db.Column(db.String(100))
+    postal_code = db.Column(db.String(10))
+    street_address = db.Column(db.String(255))
     salary = db.Column(db.Float)
     date_hired = db.Column(db.Date, nullable=False)
     date_of_birth = db.Column(db.Date)
@@ -28,7 +32,12 @@ class Employee(db.Model):
     marital_status = db.Column(db.String(20))
     emergency_contact = db.Column(db.String(100))
     emergency_phone = db.Column(db.String(20))
-    active = db.Column(db.Boolean, default=True)
+    status = db.Column(db.String(20), default="Active")
+    archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime)
+    # Check if this exists:
+    cs_eligibility = db.Column(db.String(50))
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -38,7 +47,8 @@ class Employee(db.Model):
     position = db.relationship("Position", back_populates="employees", foreign_keys=[position_id])
     attendances = db.relationship("Attendance", back_populates="employee", lazy=True)
     leaves = db.relationship("Leave", back_populates="employee", lazy=True)
-
+    # Employee model
+    leave_credits = db.relationship("LeaveCredit", back_populates="employee", lazy=True)
     # Payroll-related relationships
     payrolls = db.relationship("Payroll", back_populates="employee", lazy=True)
     payslips = db.relationship("Payslip", back_populates="employee", lazy=True)
@@ -68,7 +78,40 @@ class Employee(db.Model):
 
     def get_full_name(self):
         return f"{self.first_name} {self.middle_name or ''} {self.last_name}".strip()
+    
+    def get_full_address(self):
+        """Conveniently returns formatted full address."""
+        parts = [self.street_address, self.barangay, self.municipality, self.province, self.postal_code]
+        return ', '.join([p for p in parts if p])
 
+    def get_working_duration(self):
+        """Returns the working duration as years, months, and days from date_hired to today."""
+        if not self.date_hired:
+            return "0 years, 0 months, 0 days"
+        
+        today = date.today()
+        start = self.date_hired
+
+        # Initial difference
+        years = today.year - start.year
+        months = today.month - start.month
+        days = today.day - start.day
+
+        # Adjust days and months
+        if days < 0:
+            months -= 1
+            # get number of days in previous month
+            from calendar import monthrange
+            prev_month = (today.month - 1) or 12
+            prev_year = today.year if today.month != 1 else today.year - 1
+            days_in_prev_month = monthrange(prev_year, prev_month)[1]
+            days += days_in_prev_month
+
+        if months < 0:
+            years -= 1
+            months += 12
+
+        return f"{years} years, {months} months, {days} days"
 
 # =========================================================
 # ATTENDANCE
@@ -98,7 +141,6 @@ class Attendance(db.Model):
             self.remarks = f"Late - Time In: {self.time_in.strftime('%I:%M %p')}"
         else:
             self.status = "Present"
-
     def calculate_working_hours(self):
         """
         Compute total working hours between 8:00 AM and 5:00 PM only,
@@ -108,13 +150,26 @@ class Attendance(db.Model):
             self.working_hours = 0.0
             return
 
+        # Convert strings to datetime.time if needed
+        if isinstance(self.time_in, str):
+            h, m = map(int, self.time_in.split(":"))
+            actual_time_in = time(hour=h, minute=m)
+        else:
+            actual_time_in = self.time_in
+
+        if isinstance(self.time_out, str):
+            h, m = map(int, self.time_out.split(":"))
+            actual_time_out = time(hour=h, minute=m)
+        else:
+            actual_time_out = self.time_out
+
         # Official working hours
         work_start = datetime.combine(self.date, time(8, 0))
         work_end = datetime.combine(self.date, time(17, 0))
 
         # Combine date + actual time_in/out
-        actual_in = datetime.combine(self.date, self.time_in)
-        actual_out = datetime.combine(self.date, self.time_out)
+        actual_in = datetime.combine(self.date, actual_time_in)
+        actual_out = datetime.combine(self.date, actual_time_out)
 
         # Clamp the time within the 8AM–5PM range
         start = max(actual_in, work_start)
@@ -129,7 +184,6 @@ class Attendance(db.Model):
 
         # Subtract 1 hour for lunch if total > 4 hours
         self.working_hours = round(total_hours - 1, 2) if total_hours > 4 else round(total_hours, 2)
-
 
 # =========================================================
 # EVENT LISTENERS: Auto calculate hours before save
@@ -215,7 +269,9 @@ class LeaveType(db.Model):
     description = db.Column(db.Text)
 
     leaves = db.relationship('Leave', back_populates='leave_type', lazy=True)
-
+        
+    # LeaveType model
+    leave_credits = db.relationship("LeaveCredit", back_populates="leave_type", lazy=True)
     def __repr__(self):
         return f'<LeaveType {self.name}>'
 
@@ -233,3 +289,20 @@ class EmploymentType(db.Model):
 
     def __repr__(self):
         return f"<EmploymentType {self.name}>"
+
+
+
+class LeaveCredit(db.Model):
+    __tablename__ = "leave_credit"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
+    leave_type_id = db.Column(db.Integer, db.ForeignKey("leave_type.id"), nullable=False)
+    total_credits = db.Column(db.Float, default=0)   # accumulated leave
+    used_credits = db.Column(db.Float, default=0)    # used leave
+
+    employee = db.relationship("Employee", back_populates="leave_credits")
+    leave_type = db.relationship("LeaveType", back_populates="leave_credits")
+
+    def remaining_credits(self):
+        return self.total_credits - self.used_credits
