@@ -54,7 +54,7 @@ def dashboard():
         db.session.commit()
 
     # Employees
-    department_employees = Employee.query.filter_by(department_id=department.id, active=True).all()
+    department_employees = Employee.query.filter_by(department_id=department.id, status="Active").all()
     total_employees = len(department_employees)
 
     # Recent leaves

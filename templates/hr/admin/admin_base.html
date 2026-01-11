@@ -14,11 +14,15 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script
-      src="https://kit.fontawesome.com/a076d05399.js"
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4k5z6T7F5d5Yd3yR3K4pA=="
       crossorigin="anonymous"
-    ></script>
+      referrerpolicy="no-referrer"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
   <body class="bg-gray-900 text-gray-100 flex flex-col md:flex-row min-h-screen font-sans">
@@ -60,15 +64,14 @@
 
         <!-- Navigation -->
         <nav class="mt-4 px-4 text-gray-300">
-          <!-- Group Sections -->
           {% for section, links in {
             "Employee Management": [
-              ("fa-chart-line", "Dashboard", "hr_admin.hr_dashboard"),
+              ("fa-gauge", "Dashboard", "hr_admin.hr_dashboard"),
               ("fa-users", "Employee Management", "hr_admin.view_employees"),
               ("fa-user-gear", "Account Management", "hr_admin.view_users")
             ],
             "Attendance & Leave": [
-              ("fa-table-list", "View Attendance", "hr_admin.attendance"),
+              ("fa-calendar-check", "View Attendance", "hr_admin.attendance"),
               ("fa-user-clock", "Add Attendance", "hr_admin.add_attendance"),
               ("fa-calendar-days", "View Leaves", "hr_admin.view_leaves")
             ],
@@ -81,8 +84,8 @@
               ("fa-user-plus", "Add Position", "hr_admin.add_position")
             ],
             "Reports & Settings": [
-              ("fa-chart-column", "Attendance Reports", "hr_admin.attendance_report"),
-              ("fa-chart-line", "Leave Reports", "hr_admin.leave_report"),
+              ("fa-file-chart-column", "Attendance Reports", "hr_admin.attendance_report"),
+              ("fa-file-chart-line", "Leave Reports", "hr_admin.leave_report"),
               ("fa-gear", "Account Settings", "hr_admin.profile")
             ]
           }.items() %}
@@ -92,7 +95,7 @@
               {% for icon, text, url in links %}
               <li>
                 <a href="{{ url_for(url) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
-                  <i class="fa-solid {{ icon }} text-blue-400"></i> {{ text }}
+                  <i class="fa-solid {{ icon }} text-blue-400 w-5"></i> {{ text }}
                 </a>
               </li>
               {% endfor %}
@@ -100,6 +103,8 @@
           </div>
           {% endfor %}
         </nav>
+
+
       </div>
 
       <!-- Logout -->

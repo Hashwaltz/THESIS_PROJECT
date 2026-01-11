@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
+from main_app.config import Config
 from main_app.extensions import db, login_manager, migrate, mail
 
 # Import shared User model
@@ -15,10 +16,8 @@ import payroll_system.payroll.models.payroll_models
 def create_app():
     
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hr_and_payroll.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = 'your-secret-key'
-
+    app.config.from_object(Config)
+    
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)

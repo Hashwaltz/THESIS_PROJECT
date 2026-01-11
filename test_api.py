@@ -26,43 +26,40 @@ def generate_attendance_jan_to_nov():
     with app.app_context():  # push app context for database access
         employees = Employee.query.all()
         start_date = date(2025, 1, 1)
-        end_date = date(2025, 11, 5)  # ✅ Up to November 5, 2025
+        end_date = date(2025, 12, 30)
         delta = timedelta(days=1)
 
-        # ✅ Philippine holidays (add/edit as needed)
+        # Philippine holidays
         holidays = [
-            date(2025, 1, 1),   # New Year's Day
-            date(2025, 2, 25),  # EDSA Revolution Anniversary
-            date(2025, 3, 31),  # Holy Monday (example)
-            date(2025, 4, 9),   # Araw ng Kagitingan
-            date(2025, 5, 1),   # Labor Day
-            date(2025, 6, 12),  # Independence Day
-            date(2025, 8, 21),  # Ninoy Aquino Day
-            date(2025, 8, 25),  # National Heroes Day
-            date(2025, 11, 1),  # All Saints’ Day
-            date(2025, 11, 2),  # All Souls’ Day
+            date(2025, 1, 1),
+            date(2025, 2, 25),
+            date(2025, 3, 31),
+            date(2025, 4, 9),
+            date(2025, 5, 1),
+            date(2025, 6, 12),
+            date(2025, 8, 21),
+            date(2025, 8, 25),
+            date(2025, 11, 1),
+            date(2025, 11, 2),
         ]
 
         for emp in employees:
             current_date = start_date
             attendance_dates = []
 
-            # ✅ Collect weekdays only (Mon–Fri) excluding holidays
             while current_date <= end_date:
                 if current_date.weekday() < 5 and current_date not in holidays:
                     attendance_dates.append(current_date)
                 current_date += delta
 
-            # ✅ Randomize attendance pattern
             total_days = len(attendance_dates)
-            late_count = max(5, total_days // 20)   # about 5% late
-            absent_count = max(5, total_days // 25) # about 4% absent
+            late_count = max(5, total_days // 20)
+            absent_count = max(5, total_days // 25)
 
             late_dates = random.sample(attendance_dates, min(late_count, total_days))
             remaining_dates = [d for d in attendance_dates if d not in late_dates]
             absent_dates = random.sample(remaining_dates, min(absent_count, len(remaining_dates)))
 
-            # ✅ Create attendance records
             for day in attendance_dates:
                 if day in late_dates:
                     status = "Late"
@@ -71,9 +68,17 @@ def generate_attendance_jan_to_nov():
                     remarks = f"Late - Time In: {time_in.strftime('%I:%M %p')}"
                 elif day in absent_dates:
                     status = "Absent"
-                    time_in = None
-                    time_out = None
-                    remarks = "Absent"
+                    # Randomly decide if completely absent or partial absence
+                    if random.choice([True, False]):
+                        # Completely absent
+                        time_in = None
+                        time_out = None
+                        remarks = "Absent"
+                    else:
+                        # Partial absence (late arrival or early leave)
+                        time_in = random_time(9, 11)
+                        time_out = time(17, 0)
+                        remarks = f"Absent - Partial (Time In: {time_in.strftime('%I:%M %p')})"
                 else:
                     status = "Present"
                     time_in = random_time()
@@ -91,7 +96,7 @@ def generate_attendance_jan_to_nov():
                 db.session.add(attendance)
 
         db.session.commit()
-        print("✅ Attendance records from Jan 1 to Nov 5, 2025 (excluding holidays) added successfully!")
+        print("✅ Attendance records (Jan–Nov 2025, realistic absents & late) added successfully!")
 
 
 if __name__ == "__main__":

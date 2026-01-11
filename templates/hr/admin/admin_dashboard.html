@@ -2,7 +2,9 @@
 {% block title %}Dashboard | HR Admin{% endblock %}
 {% block content %}
 
-<section>
+<section class="p-6">
+
+  <!-- Header -->
   <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
     <span class="material-symbols-outlined text-3xl">dashboard</span>
     HR Dashboard
@@ -57,158 +59,163 @@
     </div>
   </div>
 
-  <!-- Graphs Section -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+  <!-- Top Components: Reminders, Quick Actions, Notes -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+    <!-- Reminders -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">notifications</span> Reminders
+      </h3>
+      <ul class="list-disc list-inside text-gray-300 space-y-2">
+        {% for reminder in reminders %}
+          <li>{{ reminder }}</li>
+        {% else %}
+          <li>No reminders</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">bolt</span> Quick Actions
+      </h3>
+      <div class="flex flex-col gap-3">
+        <a href="{{ url_for('hr_admin.view_employees') }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-center">Add Employee</a>
+        <a href="{{ url_for('hr_admin.attendance_report') }}" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-center">Generate Attendance Report</a>
+        <a href="{{ url_for('hr_admin.leave_report') }}" class="bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded text-center">Generate Leave Report</a>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">sticky_note_2</span> Notes
+      </h3>
+      <ul class="list-disc list-inside text-gray-300 space-y-2">
+        {% for note in notes %}
+          <li>{{ note }}</li>
+        {% else %}
+          <li>No notes</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
     <!-- Employee Growth -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined">trending_up</span> Employee Growth
-      </h2>
-      <canvas id="employeeChart" height="120"></canvas>
+      </h3>
+      <div class="relative h-[240px]">
+        <canvas id="employeeChart"></canvas>
+      </div>
     </div>
 
     <!-- Department Distribution -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined">apartment</span> Department Distribution
-      </h2>
-      <canvas id="deptChart" height="120"></canvas>
+      </h3>
+      <div class="relative h-[240px]">
+        <canvas id="deptChart"></canvas>
+      </div>
     </div>
   </div>
 
-  <!-- Additional Graphs -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <!-- Additional Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
     <!-- Employees per Barangay -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined">location_city</span> Employees per Barangay
-      </h2>
-      <canvas id="barangayChart" height="120"></canvas>
+      </h3>
+      <div class="relative h-[240px]">
+        <canvas id="barangayChart"></canvas>
+      </div>
     </div>
 
     <!-- Attendance Overview -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined">event_available</span> Attendance Overview
-      </h2>
-      <canvas id="attendanceChart" height="120"></canvas>
+      </h3>
+      <div class="relative h-[240px]">
+        <canvas id="attendanceChart"></canvas>
+      </div>
     </div>
 
     <!-- Leave Requests -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h2 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined">assignment</span> Leave Requests
-      </h2>
-      <canvas id="leaveChart" height="120"></canvas>
+      </h3>
+      <div class="relative h-[240px]">
+        <canvas id="leaveChart"></canvas>
+      </div>
     </div>
+
   </div>
+
 </section>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Employee Growth (Line)
-  const ctx1 = document.getElementById("employeeChart").getContext("2d");
-  new Chart(ctx1, {
-    type: "line",
-    data: {
-      labels: {{ growth_labels|tojson }},
-      datasets: [{
-        label: "Employees",
-        data: {{ growth_counts|tojson }},
-        borderColor: "#60a5fa",
-        backgroundColor: "rgba(59,130,246,0.2)",
-        tension: 0.3,
-        fill: true,
-      }],
-    },
-    options: {
-      scales: {
-        x: { ticks: { color: "#9ca3af" } },
-        y: { ticks: { color: "#9ca3af" } },
-      },
-      plugins: { legend: { labels: { color: "#d1d5db" } } },
-    },
-  });
+  function createLineChart(ctx, labels, data, color="#3b82f6", labelName="") {
+    return new Chart(ctx, {
+      type: "line",
+      data: { labels, datasets: [{ label: labelName, data, borderColor: color, backgroundColor: color+"33", tension: 0.4, fill: true }]},
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: 20 },
+        plugins: { legend: { labels: { color: "#d1d5db" } } },
+        scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } }
+      }
+    });
+  }
 
-  // Department Distribution (Doughnut)
-  const ctx2 = document.getElementById("deptChart").getContext("2d");
-  new Chart(ctx2, {
-    type: "doughnut",
-    data: {
-      labels: {{ dept_labels|tojson }},
-      datasets: [{
-        data: {{ dept_counts|tojson }},
-        backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#f87171", "#a855f7"],
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      plugins: { legend: { labels: { color: "#d1d5db" } } },
-    },
-  });
+  function createDoughnutChart(ctx, labels, data, colors) {
+    return new Chart(ctx, {
+      type: "doughnut",
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }]},
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "68%",
+        layout: { padding: 20 },
+        plugins: { legend: { position: "bottom", labels: { color: "#d1d5db", padding: 14, boxWidth: 12 } } }
+      }
+    });
+  }
 
-  // Employees per Barangay (Bar)
-  const ctx3 = document.getElementById("barangayChart").getContext("2d");
-  new Chart(ctx3, {
-    type: "bar",
-    data: {
-      labels: {{ barangay_labels|tojson }},
-      datasets: [{
-        label: "Employees",
-        data: {{ barangay_counts|tojson }},
-        backgroundColor: ["#3b82f6", "#10b981", "#f43f5e", "#f59e0b", "#8b5cf6"],
-      }],
-    },
-    options: {
-      scales: {
-        x: { ticks: { color: "#9ca3af" } },
-        y: { ticks: { color: "#9ca3af" } },
-      },
-      plugins: { legend: { labels: { color: "#d1d5db" } } },
-    },
-  });
+  function createBarChart(ctx, labels, data, color="#3b82f6") {
+    return new Chart(ctx, {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Employees", data, backgroundColor: color }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: 20 },
+        plugins: { legend: { labels: { color: "#d1d5db" } } },
+        scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } }
+      }
+    });
+  }
 
-  // Attendance Overview (Line)
-  const ctx4 = document.getElementById("attendanceChart").getContext("2d");
-  new Chart(ctx4, {
-    type: "line",
-    data: {
-      labels: {{ attendance_labels|tojson }},
-      datasets: [{
-        label: "Attendance %",
-        data: {{ attendance_counts|tojson }},
-        borderColor: "#38bdf8",
-        backgroundColor: "rgba(56,189,248,0.3)",
-        tension: 0.4,
-        fill: true,
-      }],
-    },
-    options: {
-      scales: {
-        x: { ticks: { color: "#9ca3af" } },
-        y: { ticks: { color: "#9ca3af" } },
-      },
-      plugins: { legend: { labels: { color: "#d1d5db" } } },
-    },
-  });
-
-  // Leave Requests (Pie)
-  const ctx5 = document.getElementById("leaveChart").getContext("2d");
-  new Chart(ctx5, {
-    type: "pie",
-    data: {
-      labels: {{ leave_labels|tojson }},
-      datasets: [{
-        data: {{ leave_counts|tojson }},
-        backgroundColor: ["#10b981", "#facc15", "#ef4444"],
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      plugins: { legend: { labels: { color: "#d1d5db" } } },
-    },
-  });
+  // Initialize charts
+  createLineChart(document.getElementById("employeeChart"), {{ growth_labels|tojson }}, {{ growth_counts|tojson }}, "#3b82f6", "Employees");
+  createDoughnutChart(document.getElementById("deptChart"), {{ dept_labels|tojson }}, {{ dept_counts|tojson }}, ["#3b82f6","#10b981","#facc15","#f87171","#a855f7"]);
+  createBarChart(document.getElementById("barangayChart"), {{ barangay_labels|tojson }}, {{ barangay_counts|tojson }});
+  createLineChart(document.getElementById("attendanceChart"), {{ attendance_labels|tojson }}, {{ attendance_counts|tojson }}, "#38bdf8", "Attendance %");
+  createDoughnutChart(document.getElementById("leaveChart"), {{ leave_labels|tojson }}, {{ leave_counts|tojson }}, ["#10b981","#facc15","#ef4444"]);
 </script>
 
 {% endblock %}

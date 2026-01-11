@@ -2,12 +2,17 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import current_app, request, jsonify
 from flask_login import current_user
-from hr_system.hr.models.hr_models import Department, Employee
+from hr_system.hr.models.hr_models import Department, Employee, Leave, LeaveType, LeaveCredit
 import requests
 import zipfile, tempfile, shutil, re
 import pandas as pd
-import os
 from sqlalchemy import func, case
+# utils/pdf_generator.py
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import landscape, portrait
+from reportlab.lib.units import inch
+import io, os
+from flask import current_app
 
 
 
@@ -318,3 +323,343 @@ def load_excel_to_df(file_path):
     except Exception:
         df = pd.read_excel(file_path)
     return df
+
+
+def get_leave_balance(employee_id, leave_type_name):
+    """Return remaining leave credits"""
+    leave_type = LeaveType.query.filter_by(name=leave_type_name).first()
+    if not leave_type:
+        return 0
+    credit = LeaveCredit.query.filter_by(employee_id=employee_id, leave_type_id=leave_type.id).first()
+    if not credit:
+        return 0
+    return credit.remaining_credits()
+
+
+# Long Bond: 8.5 x 13 inches -> points (72 points/inch)
+PAGE_WIDTH = 8.5 * 72   # 612
+PAGE_HEIGHT = 13 * 72   # 936
+
+def _safe_image_path(filename):
+    return os.path.join(current_app.root_path, "static", "img", filename)
+
+
+
+def generate_csform4_quadrants_pdf(leave, employee):
+    """
+    Generates an in-memory PDF (Long Bond, 4-quadrant) with the CS Form background
+    and the leave/employee data stamped into each quadrant.
+    Returns an io.BytesIO buffer ready to send_file().
+    """
+
+    def safe(value, default=""):
+        """Convert any value to string safely."""
+        if value is None:
+            return default
+        return str(value)
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
+
+    # Load background images
+    form_bg_path = _safe_image_path("form_bg.png")
+    logo_path = _safe_image_path("logo.png")
+
+    quad_w = PAGE_WIDTH / 2
+    quad_h = PAGE_HEIGHT / 2
+
+    quadrants = [
+        (0, 0),
+        (1, 0),
+        (0, 1),
+        (1, 1),
+    ]
+
+    c.setFont("Helvetica", 9)
+
+    # Safe employee fields
+    department_name = safe(getattr(employee.department, "name", None), "Human Resource Management Office")
+    position_name = safe(getattr(employee.position, "name", None), "")
+    salary_str = ""
+    try:
+        salary_str = f"₱{float(employee.salary):,.2f}"
+    except:
+        salary_str = safe(employee.salary)
+
+    # Safe name fields
+    last = safe(employee.last_name).upper()
+    first = safe(employee.first_name).title()
+    middle = safe(employee.middle_name)
+
+    fullname_str = f"{last:<20} {first} {middle}"
+
+    # Safe dates
+    start_date = leave.start_date.strftime("%B %d, %Y") if leave.start_date else ""
+    end_date = leave.end_date.strftime("%B %d, %Y") if leave.end_date else ""
+    inclusive_dates = f"{start_date} to {end_date}" if start_date and end_date else ""
+
+    filing_date_str = start_date
+
+    # Leave type
+    chosen_type = ""
+    if hasattr(leave, "leave_type") and leave.leave_type:
+        chosen_type = safe(leave.leave_type.name)
+    else:
+        chosen_type = safe(leave.leave_type_id)
+
+    # Leave type offsets
+    leave_map = {
+        "Vacation Leave": 0,
+        "Mandatory/Forced Leave": -16,
+        "Sick Leave": -32,
+        "Maternity Leave": -48,
+        "Paternity Leave": -64,
+        "Special Privilege Leave": -80,
+        "Solo Parent Leave": -96,
+        "Study Leave": -112,
+        "10-Day VAWC Leave": -128,
+        "Rehabilitation Privilege": -144,
+        "Special Emergency (Calamity) Leave": -160,
+        "Adoption Leave": -176,
+        "Others": -192,
+    }
+
+    # Leave credits
+    vac_total = safe(getattr(employee, "vacation_total", None) or getattr(employee, "vacation_credits", None) or 0)
+    sick_total = safe(getattr(employee, "sick_total", None) or getattr(employee, "sick_credits", None) or 0)
+
+    # Approver
+    approver = safe(getattr(leave, "approver_name", None) or getattr(employee, "approver", None), "FERNANDO DG. CRUZ")
+    mayor_name = "HON. MARIA ELENA L. GERMAR"
+
+    # Render 4 quadrants
+    for col, row in quadrants:
+        origin_x = col * quad_w
+        origin_y = PAGE_HEIGHT - (row + 1) * quad_h
+
+        # Background
+        if os.path.exists(form_bg_path):
+            try:
+                c.drawImage(form_bg_path, origin_x, origin_y,
+                            width=quad_w, height=quad_h, mask='auto')
+            except:
+                pass
+
+        # Logo
+        if os.path.exists(logo_path):
+            try:
+                c.drawImage(
+                    logo_path,
+                    origin_x + 10,
+                    origin_y + quad_h - 50,
+                    width=40,
+                    height=40,
+                    mask='auto'
+                )
+            except:
+                pass
+
+        # === TEXT FIELDS ===
+        text_x = origin_x + 80
+        text_y_top = origin_y + quad_h - 40
+
+        c.setFont("Helvetica", 8.5)
+
+        # 1. Department
+        c.drawString(text_x, text_y_top, "1. OFFICE/DEPARTMENT:")
+        c.drawString(text_x + 140, text_y_top, department_name)
+
+        # 2. Name
+        name_y = text_y_top - 18
+        c.drawString(text_x, name_y, "2. NAME:")
+        c.drawString(text_x + 70, name_y, fullname_str)
+
+        # 3. Date of filing
+        filing_y = name_y - 18
+        c.drawString(text_x, filing_y, "3. DATE OF FILING:")
+        c.drawString(text_x + 100, filing_y, filing_date_str)
+
+        # 4. Position
+        c.drawString(text_x + 260, filing_y, "4. POSITION:")
+        c.drawString(text_x + 320, filing_y, position_name)
+
+        # 5. Salary
+        salary_y = filing_y - 16
+        c.drawString(text_x + 260, salary_y, "5. SALARY:")
+        c.drawString(text_x + 320, salary_y, salary_str)
+
+        # Leave type "X"
+        c.setFont("Helvetica-Bold", 12)
+        offset = leave_map.get(chosen_type, None)
+
+        if offset is None:
+            for k in leave_map:
+                if k.lower().split()[0] in chosen_type.lower():
+                    offset = leave_map[k]
+                    break
+        if offset is None:
+            offset = 0
+
+        x_mark_x = origin_x + 52
+        x_mark_y = origin_y + quad_h - 140 + offset
+        c.drawString(x_mark_x, x_mark_y, "X")
+
+        c.setFont("Helvetica", 8)
+
+        # 6.C Days + inclusive dates
+        c.drawString(origin_x + 40, origin_y + 170, "6.C NUMBER OF WORKING DAYS APPLIED FOR:")
+        c.drawString(origin_x + 300, origin_y + 170, safe(leave.days_requested))
+
+        c.drawString(origin_x + 40, origin_y + 150, "INCLUSIVE DATES:")
+        c.drawString(origin_x + 140, origin_y + 150, inclusive_dates)
+
+        # Signature line
+        c.line(origin_x + quad_w - 170, origin_y + 130, origin_x + quad_w - 20, origin_y + 130)
+        c.setFont("Helvetica", 7.5)
+        c.drawString(origin_x + quad_w - 140, origin_y + 116, "(Signature of Applicant)")
+
+        # 7.A Leave credits
+        cert_y = origin_y + 110
+        c.setFont("Helvetica", 8)
+        c.drawString(origin_x + 40, cert_y, "7.A CERTIFICATION OF LEAVE CREDITS:")
+        c.drawString(origin_x + 140, cert_y, f"As of {start_date.replace(str(leave.start_date.day)+',', '') if leave.start_date else ''}")
+        c.drawString(origin_x + 40, cert_y - 14, f"Total Earned (Vacation): {vac_total}")
+        c.drawString(origin_x + 220, cert_y - 14, f"Total Earned (Sick): {sick_total}")
+
+        # 7.B Recommendation
+        rec_y = origin_y + 30
+        c.drawString(origin_x + quad_w * 0.58, rec_y + 20, "7.B RECOMMENDATION:")
+        c.drawString(origin_x + quad_w * 0.58, rec_y, "For approval ____   For disapproval due to: ___________________")
+
+        # Approving Officer
+        c.drawString(origin_x + 40, origin_y + 20, approver)
+        c.drawString(origin_x + 40, origin_y + 8, "(Authorized Officer)")
+
+        # Mayor
+        c.drawString(origin_x + quad_w * 0.44, origin_y + 8, mayor_name)
+        c.drawString(origin_x + quad_w * 0.55, origin_y - 4, "Municipal Mayor")
+
+        c.setFont("Helvetica", 9)
+
+    # Finish
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+def build_safe_attendance_chart(raw_chart):
+    """
+    Ensures attendance chart data is ALWAYS JSON serializable
+    Prevents 'Undefined is not JSON serializable'
+    """
+    if raw_chart is None:
+        raw_chart = {}
+
+    return {
+        "dates": raw_chart.get("dates") or [],
+        "present_counts": raw_chart.get("present_counts") or [],
+        "absent_counts": raw_chart.get("absent_counts") or [],
+        "late_counts": raw_chart.get("late_counts") or []
+    }
+
+
+
+
+# ==============================
+# CONSTANTS (PH STANDARD)
+# ==============================
+
+WORK_HOURS_PER_DAY = 8
+MINUTES_PER_HOUR = 60
+MINUTES_PER_DAY = WORK_HOURS_PER_DAY * MINUTES_PER_HOUR
+
+
+# ==============================
+# CORE CONVERSIONS
+# ==============================
+
+def hours_to_day_fraction(hours: float) -> float:
+    """
+    Convert working hours to fraction of a day.
+    """
+    if hours < 0:
+        raise ValueError("Hours cannot be negative")
+
+    return round(hours / WORK_HOURS_PER_DAY, 6)
+
+
+
+def minutes_to_day_fraction(minutes: int) -> float:
+    """
+    Convert working minutes to fraction of a day.
+    """
+    if minutes < 0:
+        raise ValueError("Minutes cannot be negative")
+
+    return round(minutes / MINUTES_PER_DAY, 6)
+
+
+def time_to_day_fraction(hours: int = 0, minutes: int = 0) -> float:
+    """
+    Convert hours and minutes to fraction of a day.
+    """
+    if hours < 0 or minutes < 0:
+        raise ValueError("Hours and minutes must be non-negative")
+
+    total_minutes = (hours * MINUTES_PER_HOUR) + minutes
+    return round(total_minutes / MINUTES_PER_DAY, 6)
+
+
+def day_fraction_to_time(day_fraction: float) -> tuple:
+    """
+    Convert fraction of a day to hours and minutes.
+    """
+    if day_fraction < 0:
+        raise ValueError("Day fraction cannot be negative")
+
+    total_minutes = round(day_fraction * MINUTES_PER_DAY)
+    hours = total_minutes // MINUTES_PER_HOUR
+    minutes = total_minutes % MINUTES_PER_HOUR
+
+    return hours, minutes
+
+
+# ==============================
+# HR / PAYROLL HELPERS
+# ==============================
+
+def compute_leave_equivalent(hours: int = 0, minutes: int = 0) -> float:
+    """
+    Compute leave equivalent in day fraction.
+    Used for SL / VL / CTO.
+    """
+    return time_to_day_fraction(hours, minutes)
+
+
+def compute_attendance_equivalent(time_in_minutes: int) -> float:
+    """
+    Convert biometric total minutes to day fraction.
+    """
+    if time_in_minutes < 0:
+        raise ValueError("Time in minutes cannot be negative")
+
+    return round(time_in_minutes / MINUTES_PER_DAY, 6)
+
+
+def is_full_day(hours: int = 0, minutes: int = 0) -> bool:
+    """
+    Check if rendered time is equivalent to a full working day.
+    """
+    return (hours * MINUTES_PER_HOUR + minutes) >= MINUTES_PER_DAY
+
+
+# ==============================
+# ROUNDING (OPTIONAL – CSC STYLE)
+# ==============================
+
+def round_day_fraction(day_fraction: float, precision: int = 3) -> float:
+    """
+    Round day fraction for payroll or CSC reports.
+    """
+    return round(day_fraction, precision)

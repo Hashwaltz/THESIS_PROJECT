@@ -306,3 +306,11 @@ class LeaveCredit(db.Model):
 
     def remaining_credits(self):
         return self.total_credits - self.used_credits
+    
+    def add_credits(self, amount):
+        self.total_credits += amount
+
+    def use_credits(self, amount):
+        self.used_credits += amount
+
+    

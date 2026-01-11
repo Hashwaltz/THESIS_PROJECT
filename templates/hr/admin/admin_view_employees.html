@@ -285,9 +285,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const employmentTypeSelectModal = addModal?.querySelector('select[name="employment_type_id"]');
   employmentTypeSelectModal?.addEventListener("change", function () {
     const text = this.options[this.selectedIndex]?.text.toLowerCase();
-    if (text.includes("casual")) salaryInput.placeholder = "Enter daily rate";
-    else if (text.includes("regular")) salaryInput.placeholder = "Enter monthly salary";
+    if (text.includes("casual")) salaryInput.placeholder = "Enter daily rate with leave credits";
+    else if (text.includes("regular")) salaryInput.placeholder = "Enter monthly salary with leave credits";
     else if (text.includes("part")) salaryInput.placeholder = "Enter per hour rate";
+    else if (text.includes("jo")) salaryInput.placeholder = "Enter daily rate";
     else salaryInput.placeholder = "Enter salary";
   });
 

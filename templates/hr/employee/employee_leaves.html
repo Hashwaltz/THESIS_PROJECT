@@ -2,86 +2,90 @@
 {% block title %}Employee - Leave Records{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head" style="display: flex; justify-content: space-between; align-items: center;">
-    <div>
-      <h1>Leave Records</h1>
-    </div>
-    <!-- Request Leave Button -->
-    <div>
-      <a href="{{ url_for('employee.request_leave') }}" class="btn btn-primary" style="padding: 6px 12px; background-color:#4CAF50; color:white; border-radius:4px; text-decoration:none;">
-        <i class="fa fa-plus"></i> Request Leave
-      </a>
-    </div>
+<main class="p-6 space-y-6">
+
+  <!-- Header with Request Leave Button -->
+  <header class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-100">Leave Records</h1>
+    <a href="{{ url_for('employee.request_leave') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center gap-2">
+      <i class="fa fa-plus"></i> Request Leave
+    </a>
   </header>
 
   <!-- Filter by Status -->
-  <div class="search-box">
-    <form method="get" id="filterForm">
-      <div class="fields">
-        <div class="input-field">
-          <label>Status</label>
-          <select name="status" id="statusFilter">
-            <option value="" {% if not status_filter %}selected{% endif %}>All</option>
-            <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>Pending</option>
-            <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>Approved</option>
-            <option value="Rejected" {% if status_filter=='Rejected' %}selected{% endif %}>Rejected</option>
-          </select>
-        </div>
-      </div>
+  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-wrap gap-4">
+    <form method="get" id="filterForm" class="flex items-center gap-4">
+      <label for="statusFilter" class="text-gray-200 font-medium">Status</label>
+      <select name="status" id="statusFilter" class="bg-gray-700 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+        <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+        <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>Pending</option>
+        <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if status_filter=='Rejected' %}selected{% endif %}>Rejected</option>
+      </select>
     </form>
   </div>
 
   <!-- Leave Table -->
-  <div class="table-container">
-    <table class="responsive-table">
-      <caption><b>Leave List</b></caption>
+  <div class="overflow-x-auto bg-gray-800 rounded-xl shadow p-4">
+    <table class="min-w-full divide-y divide-gray-700">
+      <caption class="text-lg font-semibold text-gray-100 mb-2 text-left">Leave List</caption>
       <thead>
-        <tr>
-          <th>Type</th>
-          <th>Start Date</th>
-          <th>End Date</th>
-          <th>Days</th>
-          <th>Status</th>
-          <th>Reason</th>
+        <tr class="text-left text-gray-400 uppercase text-sm">
+          <th class="px-4 py-2">Type</th>
+          <th class="px-4 py-2">Start Date</th>
+          <th class="px-4 py-2">End Date</th>
+          <th class="px-4 py-2">Days</th>
+          <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2">Reason</th>
+          <th class="px-4 py-2">Actions</th>
+
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-700">
         {% for leave in leaves.items %}
-        <tr>
-          <td data-label="Type">{{ leave.leave_type.name }}</td>
-          <td data-label="Start Date">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
-          <td data-label="End Date">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
-          <td data-label="Days">{{ leave.days_requested }}</td>
-          <td data-label="Status" style="color:
-              {% if leave.status == 'Approved' %}green
-              {% elif leave.status == 'Pending' %}orange
-              {% else %}red{% endif %};">
+        <tr class="hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-100">{{ leave.leave_type.name }}</td>
+          <td class="px-4 py-2 text-gray-100">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-2 text-gray-100">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-2 text-gray-100">{{ leave.days_requested }}</td>
+          <td class="px-4 py-2 font-semibold" style="color:
+              {% if leave.status == 'Approved' %}#22c55e
+              {% elif leave.status == 'Pending' %}#facc15
+              {% else %}#ef4444{% endif %};">
             {{ leave.status }}
           </td>
-          <td data-label="Reason">{{ leave.reason }}</td>
+          <td class="px-4 py-2 text-gray-100">{{ leave.reason }}</td>
+          <td class="px-4 py-2">
+            <a href="{{ url_for('employee.print_leave_form', leave_id=leave.id) }}"
+              class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+              Print Form
+            </a>
+          </td>
+
+
         </tr>
         {% else %}
         <tr>
-          <td colspan="6">No leave records found.</td>
+          <td colspan="6" class="px-4 py-2 text-gray-400 text-center">No leave records found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-
-    <!-- Pagination -->
-    <div class="pagination">
-      {% if leaves.has_prev %}
-        <a href="{{ url_for('employee.leaves', page=leaves.prev_num, status=status_filter) }}">Previous</a>
-      {% endif %}
-
-      Page {{ leaves.page }} of {{ leaves.pages }}
-
-      {% if leaves.has_next %}
-        <a href="{{ url_for('employee.leaves', page=leaves.next_num, status=status_filter) }}">Next</a>
-      {% endif %}
-    </div>
   </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-center mt-4 space-x-4 text-gray-200">
+    {% if leaves.has_prev %}
+      <a href="{{ url_for('employee.leaves', page=leaves.prev_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
+    {% endif %}
+
+    <span class="px-3 py-1 bg-gray-700 rounded">Page {{ leaves.page }} of {{ leaves.pages }}</span>
+
+    {% if leaves.has_next %}
+      <a href="{{ url_for('employee.leaves', page=leaves.next_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
+    {% endif %}
+  </div>
+
 </main>
 
 <!-- Auto-submit JS for status filter -->

@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department, Position, LeaveType, EmploymentType
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position, LeaveType, EmploymentType, LeaveCredit
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm, DepartmentForm
 from ..utils import admin_required, generate_employee_id, get_attendance_summary, get_current_month_range, load_excel_to_df, unlock_xlsx
 from .. import db, mail
@@ -194,23 +194,24 @@ def view_employees():
         selected_employment_type=employment_type_id
     )
 
+
 @hr_admin_bp.route('/employees/add', methods=['POST'])
 @login_required
 @admin_required
 def add_employee():
     try:
-        # Get department and generate unique employee ID
+        # --- 1. Get form data ---
         department_id = request.form['department_id']
         new_employee_id = generate_employee_id(department_id)
 
-        # Safely parse dates
+        # Parse dates safely
         date_hired = parse_date(request.form['date_hired'], "Date Hired")
         date_of_birth = parse_date(request.form['date_of_birth'], "Date of Birth")
         if not date_hired or not date_of_birth:
             flash("Invalid date format!", "danger")
             return redirect(url_for('hr_admin.view_employees'))
 
-        # Convert salary to float
+        # Parse salary
         salary_str = request.form.get('salary', '').strip()
         try:
             salary = float(salary_str) if salary_str else 0.0
@@ -218,14 +219,14 @@ def add_employee():
             flash("Invalid salary value!", "danger")
             return redirect(url_for('hr_admin.view_employees'))
 
-        # Get address fields individually
+        # Address
         street = request.form.get('street_address', '').strip()
         barangay = request.form.get('barangay', '').strip()
         municipality = request.form.get('municipality', '').strip()
         province = request.form.get('province', '').strip()
         postal_code = request.form.get('postal_code', '').strip()
 
-        # --- 1. Create User ---
+        # --- 2. Create User ---
         default_password = "password123"
         user = User(
             email=request.form['email'],
@@ -235,9 +236,10 @@ def add_employee():
             password=default_password
         )
         db.session.add(user)
-        db.session.flush()  # ensures user.id is available
+        db.session.flush()  # get user.id
 
-        # --- 2. Create Employee linked to User ---
+        # --- 3. Create Employee ---
+        employment_type_id = int(request.form['employment_type_id'])
         employee = Employee(
             employee_id=new_employee_id,
             user_id=user.id,
@@ -246,14 +248,14 @@ def add_employee():
             middle_name=request.form.get('middle_name'),
             email=request.form['email'],
             phone=request.form['phone'],
-            street_address=street,      # FIXED typo here
+            street_address=street,
             barangay=barangay,
             municipality=municipality,
             province=province,
             postal_code=postal_code,
             department_id=department_id,
             position_id=request.form['position_id'],
-            employment_type_id=request.form['employment_type_id'],
+            employment_type_id=employment_type_id,
             salary=salary,
             date_hired=date_hired,
             date_of_birth=date_of_birth,
@@ -263,30 +265,54 @@ def add_employee():
             status='Active'
         )
         db.session.add(employee)
+        db.session.flush()  # get employee.id for leave credits
+
+        # --- 4. Initialize Leave Credits ONLY for Regular (1) & Casual (3) ---
+        if employment_type_id in [1, 3]:
+            # Vacation Leave (leave_type_id = 1)
+            vacation_credit = LeaveCredit(
+                employee_id=employee.id,
+                leave_type_id=1,
+                total_credits=15.0,
+                used_credits=0
+            )
+            db.session.add(vacation_credit)
+
+            # Sick Leave (leave_type_id = 2)
+            sick_credit = LeaveCredit(
+                employee_id=employee.id,
+                leave_type_id=2,
+                total_credits=15.0,
+                used_credits=0
+            )
+            db.session.add(sick_credit)
+
+        # --- 5. Commit everything together ---
         db.session.commit()
-         # --- 7. Send Gmail notification with account info ---
+
+        # --- 6. Send Gmail notification ---
         try:
             msg = Message(
                 subject="Your govHRPay Account Details",
-                sender=("GovHRPay Admin", "natanielashleyrodelas@gmail.com"),  # replace with system email
+                sender=("GovHRPay Admin", "natanielashleyrodelas@gmail.com"),  # system email
                 recipients=[user.email]
             )
             msg.body = f"""
-                Hello {user.first_name} {user.last_name},
+Hello {user.first_name} {user.last_name},
 
-                Your govHRPay account has been created successfully!
+Your govHRPay account has been created successfully!
 
-                Login credentials:
-                Email: {user.email}
-                Password: {default_password}
+Login credentials:
+Email: {user.email}
+Password: {default_password}
 
-                Please log in at: http://your-govhrpay-url/login
+Please log in at: http://127.0.0.1:5000/hr/auth/login
 
-                For security, you should change your password after first login.
+For security, you should change your password after first login.
 
-                Thank you,
-                GovHRPay Admin
-                            """
+Thank you,
+GovHRPay Admin
+"""
             mail.send(msg)
         except Exception as mail_err:
             current_app.logger.error(f"Failed to send account email to {user.email}: {mail_err}")
@@ -294,13 +320,13 @@ def add_employee():
         else:
             flash("Employee and user account created successfully! Email sent with login details.", "success")
 
-        flash("Employee and user account created successfully!", "success")
         return redirect(url_for('hr_admin.view_employees'))
 
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
-        flash("Error: Employee or User already exists!", "danger")
+        flash(f"Error: Employee or User already exists! ({str(e)})", "danger")
         return redirect(url_for('hr_admin.view_employees'))
+
     except Exception as e:
         db.session.rollback()
         flash(f"Unexpected error: {str(e)}", "danger")

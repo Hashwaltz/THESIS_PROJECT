@@ -1,99 +1,93 @@
-{# templates/hr/officer/officer_dashboard.html #}
-{% extends 'hr/officer/officer_base.html' %} 
-{% block title %}HR Officer - Dashboard {% endblock %} 
+{% extends 'hr/officer/officer_base.html' %}
+{% block title %}HR Officer - Dashboard{% endblock %}
 
-{% block content%}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Officer Dashboard</b></h1>
-  </header>
-
-  <div class="content">
-    <section class="info-boxes">
-      <div class="info-box">
-        <div class="box-icon">
-           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
-            check_circle
-          </span>
-        </div>
-        <div class="box-content">
-          <span class="big">{{present_count}}</span>
-          Present Today
-        </div>
+{% block content %}
+<div class="space-y-6">
+  <!-- Info Cards -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div class="bg-gray-800 rounded-lg shadow-md p-6 flex items-center gap-4">
+      <div class="text-blue-400 text-4xl">
+        <i class="fa-solid fa-circle-check"></i>
       </div>
-
-      <div class="info-box">
-        <div class="box-icon">
-           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
-            cancel
-          </span>
-        </div>
-        <div class="box-content">
-          <span class="big">{{ absent_count }}</span>
-          Absent Today
-        </div>
+      <div>
+        <h2 class="text-3xl font-bold">{{ present_count }}</h2>
+        <p class="text-gray-300">Present Today</p>
       </div>
+    </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-           <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 400;">
-            group
-          </span>
-        </div>
-        <div class="box-content">
-          <span class="big">{{ total_users }}</span>
-          Total Employees
-        </div>
+    <div class="bg-gray-800 rounded-lg shadow-md p-6 flex items-center gap-4">
+      <div class="text-red-400 text-4xl">
+        <i class="fa-solid fa-circle-xmark"></i>
       </div>
-    </section>
-  </div>
+      <div>
+        <h2 class="text-3xl font-bold">{{ absent_count }}</h2>
+        <p class="text-gray-300">Absent Today</p>
+      </div>
+    </div>
 
-  <div class="chart-container">a
-    <canvas id="monthlyAttendanceChart"></canvas> {# Changed ID to avoid conflict #}
-  </div>
-  
-  <div class="reminders-section">
-    <h2>Daily Reminders</h2>
+    <div class="bg-gray-800 rounded-lg shadow-md p-6 flex items-center gap-4">
+      <div class="text-yellow-400 text-4xl">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div>
+        <h2 class="text-3xl font-bold">{{ total_users }}</h2>
+        <p class="text-gray-300">Total Employees</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Monthly Attendance Chart -->
+  <section class="bg-gray-800 rounded-lg shadow-md p-6 h-96">
+    <h2 class="text-lg font-semibold text-white mb-4">
+      Monthly Attendance Overview - {{ current_month }} {{ current_year }}
+    </h2>
+    <canvas id="monthlyAttendanceChart" class="w-full h-full"></canvas>
+  </section>
+
+  <!-- Reminders -->
+  <section class="bg-gray-800 rounded-lg shadow-md p-6">
+    <h2 class="text-lg font-semibold text-white mb-4">Daily Reminders</h2>
     {% if reminders %}
-    <ul>
+    <ul class="list-disc list-inside space-y-2 text-gray-300">
       {% for reminder in reminders %}
-      <li>{{ reminder }}</li>
+      <li><i class="fa-solid fa-bell text-blue-400 mr-2"></i>{{ reminder }}</li>
       {% endfor %}
     </ul>
     {% else %}
-    <p class="text-center">No reminders for today!</p>
+    <p class="text-gray-400 text-center">No reminders for today!</p>
     {% endif %}
-  </div>
-</main>
+  </section>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {# Ensure Chart.js is loaded #}
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Data from Flask context for the monthly graph
     const monthlyDates = {{ monthly_dates | tojson }};
     const monthlyPresentCounts = {{ monthly_present_counts | tojson }};
     const monthlyAbsentCounts = {{ monthly_absent_counts | tojson }};
     const monthlyLateCounts = {{ monthly_late_counts | tojson }};
 
     const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-    const monthlyAttendanceChart = new Chart(ctx, {
-      type: 'line', // 'line' chart is often better for time series
+    new Chart(ctx, {
+      type: 'line',
       data: {
         labels: monthlyDates,
         datasets: [
           {
             label: 'Present',
             data: monthlyPresentCounts,
-            backgroundColor: 'rgba(75, 192, 192, 0.4)', // Light green
+            backgroundColor: 'rgba(75, 192, 192, 0.3)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 2,
-            tension: 0.3, // Smoother lines
+            tension: 0.3,
             fill: true
           },
           {
             label: 'Absent',
             data: monthlyAbsentCounts,
-            backgroundColor: 'rgba(255, 99, 132, 0.4)',  // Light red
+            backgroundColor: 'rgba(255, 99, 132, 0.3)',
             borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 2,
             tension: 0.3,
@@ -102,7 +96,7 @@
           {
             label: 'Late',
             data: monthlyLateCounts,
-            backgroundColor: 'rgba(255, 206, 86, 0.4)', // Light yellow/orange
+            backgroundColor: 'rgba(255, 206, 86, 0.3)',
             borderColor: 'rgba(255, 206, 86, 1)',
             borderWidth: 2,
             tension: 0.3,
@@ -114,46 +108,12 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Date of Month'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Employees'
-            },
-            // Ensure Y-axis only shows whole numbers
-            ticks: {
-                stepSize: 1,
-                precision: 0
-            }
-          }
+          x: { title: { display: true, text: 'Date of Month', color: '#ccc' }, ticks: { color: '#ccc' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Number of Employees', color: '#ccc' }, ticks: { stepSize: 1, precision: 0, color: '#ccc' } }
         },
-        plugins: {
-            title: {
-                display: true,
-                text: 'Monthly Attendance Overview',
-                font: {
-                    size: 20,
-                    weight: 'bold'
-                }
-            },
-            tooltip: {
-                mode: 'index',
-                intersect: false
-            }
-        },
-        hover: {
-            mode: 'nearest',
-            intersect: true
-        }
+        plugins: { legend: { labels: { color: '#fff' } }, tooltip: { mode: 'index', intersect: false }, title: { display: false } }
       }
     });
   });
 </script>
-
 {% endblock %}

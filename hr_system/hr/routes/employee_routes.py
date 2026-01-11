@@ -1,13 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify, send_file
 from flask_login import login_required, current_user, login_user
 from datetime import datetime, date
 from ..models.user import User
 from ..models.hr_models import Employee, Attendance, Leave, LeaveType
 from ..forms import LeaveForm
-from ..utils import get_attendance_summary, get_leave_balance, get_current_month_range, employee_required, get_attendance_chart_data
+from ..utils import get_attendance_summary, get_leave_balance, get_current_month_range, employee_required, get_attendance_chart_data, generate_csform4_quadrants_pdf
 from .. import db
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
 import os
-
+import io
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -22,31 +25,56 @@ employee_bp = Blueprint(
     static_url_path='/hr/static'
     )
 
-# ---------------- DASHBOARD ----------------
 @employee_bp.route('/dashboard')
 @login_required
 @employee_required
 def dashboard():
     employee = current_user.employee_profile
+
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
         return redirect(url_for('hr_auth.logout'))
 
-    start_date, end_date = get_current_month_range()
-    attendance_summary_totals = get_attendance_summary(employee.id, start_date, end_date)
-    attendance_summary_chart = get_attendance_chart_data(employee.id, start_date, end_date)
-    recent_leaves = Leave.query.filter_by(employee_id=employee.id)\
-                               .order_by(Leave.created_at.desc()).limit(5).all()
-    leave_balances = {lt: get_leave_balance(employee.id, lt) for lt in 
-                      ['Sick', 'Vacation', 'Personal', 'Emergency', 'Maternity', 'Paternity']}
+    # Current month range
+    today = date.today()
+    start_date = today.replace(day=1)
+    end_date = today
+
+    # Attendance summary
+    attendance_summary = get_attendance_summary(employee.id, start_date, end_date)
+
+    # Chart data (safe default)
+    attendance_chart = get_attendance_chart_data(employee.id, start_date, end_date) or {}
+
+    attendance_chart.setdefault("dates", [])
+    attendance_chart.setdefault("present_counts", [])
+    attendance_chart.setdefault("absent_counts", [])
+    attendance_chart.setdefault("late_counts", [])
+
+    # Recent leaves
+    recent_leaves = (
+        Leave.query.filter_by(employee_id=employee.id)
+        .order_by(Leave.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Leave balances
+    leave_types = LeaveType.query.all()
+    leave_balances = {lt.name: get_leave_balance(employee.id, lt.name) for lt in leave_types}
+
+    # Working duration
+    working_duration = employee.get_working_duration()
 
     return render_template(
         'hr/employee/employee_dashboard.html',
         employee=employee,
-        attendance_summary=attendance_summary_totals,
-        attendance_chart=attendance_summary_chart,
+        attendance_summary=attendance_summary,
+        attendance_chart=attendance_chart,
         recent_leaves=recent_leaves,
-        leave_balances=leave_balances
+        leave_balances=leave_balances,
+        working_duration=working_duration,
+        not_assigned=False
     )
 
 # ---------------- ATTENDANCE ----------------
@@ -132,6 +160,30 @@ def leaves():
         status_filter=status_filter
     )
 
+@employee_bp.route('/employee/print_leave_form/<int:leave_id>')
+@login_required
+@employee_required
+def print_leave_form(leave_id):
+    leave = Leave.query.get_or_404(leave_id)
+
+    # Security: ensure current_user owns this leave or is allowed
+    if leave.employee_id != current_user.employee_profile.id and not current_user.is_admin:
+        # unauthorized
+        flash("You are not authorized to print this form.", "error")
+        return redirect(url_for("employee.leaves"))
+
+    # Get employee record (the one who filed)
+    employee = leave.employee  # or current_user.employee_profile
+
+    pdf_buffer = generate_csform4_quadrants_pdf(leave, employee)
+    filename = f"CSForm6_Leave_{employee.last_name}_{leave.id}.pdf"
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf"
+    )
 
 # ---------------- REQUEST LEAVE ----------------
 @employee_bp.route('/employee/request_leave', methods=['GET', 'POST'])
