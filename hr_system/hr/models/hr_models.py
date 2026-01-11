@@ -313,4 +313,124 @@ class LeaveCredit(db.Model):
     def use_credits(self, amount):
         self.used_credits += amount
 
-    
+
+
+# =========================================================
+# CONSTANTS (MATCHES EXCEL FILE)
+# =========================================================
+WORK_HOURS_PER_DAY = 8
+WORK_MINUTES_PER_DAY = 480
+HOUR_TO_DAY = 0.125     # 1 / 8
+MINUTE_TO_DAY = 0.002   # Excel rounded equivalent
+
+
+# =========================================================
+# MODEL: LateComputation (Excel Table Row Equivalent)
+# =========================================================
+class LateComputation(db.Model):
+    __tablename__ = "late_computation"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
+    attendance_id = db.Column(db.Integer, db.ForeignKey("attendance.id"), nullable=False, unique=True)
+
+    date = db.Column(db.Date, nullable=False)
+
+    # Raw values (Excel Columns)
+    late_days = db.Column(db.Integer, default=0)
+    late_hours = db.Column(db.Integer, default=0)
+    late_minutes = db.Column(db.Integer, default=0)
+
+    # Final Excel Result Column
+    day_equivalent = db.Column(db.Float, nullable=False)
+
+    remarks = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<LateComputation Emp:{self.employee_id} {self.date} = {self.day_equivalent}>"
+
+
+# =========================================================
+# CORE COMPUTATION (EXACT EXCEL LOGIC)
+# =========================================================
+def compute_late_day_equivalent(days=0, hours=0, minutes=0):
+    """
+    Matches Excel table exactly:
+    - 1 Day    = 1.000
+    - 1 Hour   = 0.125
+    - 1 Minute = 0.002
+    """
+    return round(
+        (days * 1.0) +
+        (hours * HOUR_TO_DAY) +
+        (minutes * MINUTE_TO_DAY),
+        3
+    )
+
+
+# =========================================================
+# ATTENDANCE → LATE CONVERSION
+# =========================================================
+def extract_late_from_attendance(attendance: Attendance):
+    """
+    Converts time-in to late hours/minutes
+    Official time-in: 8:00 AM
+    """
+    if not attendance.time_in:
+        return None
+
+    if attendance.time_in <= time(8, 0):
+        return None
+
+    official = datetime.combine(attendance.date, time(8, 0))
+    actual = datetime.combine(attendance.date, attendance.time_in)
+
+    total_minutes = int((actual - official).total_seconds() / 60)
+
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+
+    day_equiv = compute_late_day_equivalent(0, hours, minutes)
+
+    return {
+        "late_days": 0,
+        "late_hours": hours,
+        "late_minutes": minutes,
+        "day_equivalent": day_equiv
+    }
+
+
+# =========================================================
+# EVENT LISTENER – AUTO CREATE / UPDATE LATE RECORD
+# =========================================================
+@event.listens_for(Attendance, "after_insert")
+@event.listens_for(Attendance, "after_update")
+def generate_late_computation(mapper, connection, target):
+    late_data = extract_late_from_attendance(target)
+
+    if not late_data:
+        return
+
+    existing = LateComputation.query.filter_by(attendance_id=target.id).first()
+
+    if existing:
+        existing.late_hours = late_data["late_hours"]
+        existing.late_minutes = late_data["late_minutes"]
+        existing.day_equivalent = late_data["day_equivalent"]
+        existing.remarks = "Updated from attendance"
+    else:
+        record = LateComputation(
+            employee_id=target.employee_id,
+            attendance_id=target.id,
+            date=target.date,
+            late_days=0,
+            late_hours=late_data["late_hours"],
+            late_minutes=late_data["late_minutes"],
+            day_equivalent=late_data["day_equivalent"],
+            remarks="Auto-generated from attendance"
+        )
+        db.session.add(record)
+
+    db.session.commit()

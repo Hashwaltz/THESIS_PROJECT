@@ -2,148 +2,171 @@
 {% block title %}HR Officer - Edit Employee{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <center>
-    <div class="edit-container">
-      <header><b>Employee Details</b></header>
+<main class="p-6 max-w-6xl mx-auto">
 
-      <form id="editForm" method="POST" action="{{ url_for('officer.edit_employee', employee_id=employee.id) }}">
-        <div class="form first">
-          <div class="details personal">
-            <div class="fields">
+  <!-- Header -->
+  <h1 class="text-3xl font-bold text-blue-500 mb-6 flex items-center gap-3">
+    <i class="fa-solid fa-user-pen text-blue-400"></i>
+    Edit Employee
+  </h1>
 
-              <div class="input-field">
-                <label>First Name</label>
-                <input type="text" name="first_name" value="{{ employee.first_name }}" readonly />
-              </div>
+  <!-- Form Container -->
+  <div class="bg-gray-800 shadow-md rounded-2xl p-6">
+    <form id="editForm" method="POST" action="{{ url_for('officer.edit_employee', employee_id=employee.id) }}" class="space-y-6">
 
-              <div class="input-field">
-                <label>Middle Name</label>
-                <input type="text" name="middle_name" value="{{ employee.middle_name }}" readonly />
-              </div>
-
-              <div class="input-field">
-                <label>Last Name</label>
-                <input type="text" name="last_name" value="{{ employee.last_name }}" readonly />
-              </div>
-
-              <div class="input-field">
-                <label>Email</label>
-                <input type="email" name="email" value="{{ employee.email }}" readonly />
-              </div>
-
-              <div class="input-field">
-                <label>Mobile Number</label>
-                <input type="text" name="phone" value="{{ employee.phone }}" required />
-              </div>
-
-              <div class="input-field">
-                <label>Address</label>
-                <input type="text" name="address" value="{{ employee.address }}" required />
-              </div>
-
-              <div class="input-field">
-                <label>Date of Birth</label>
-                <input type="date" name="date_of_birth" 
-                       value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}" readonly />
-              </div>
-
-              <div class="input-field">
-                <label>Date Hired</label>
-                <input type="date" name="date_hired" 
-                       value="{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '' }}" readonly />
-              </div>
-
-              <div class="input-field">
-                <label>Position</label>
-                <select name="position" disabled>
-                  {% for pos in positions %}
-                    <option value="{{ pos.id }}" {% if employee.position_id == pos.id %}selected{% endif %}>{{ pos.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <div class="input-field">
-                <label>Gender</label>
-                <select name="gender" disabled>
-                  <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
-                  <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
-                </select>
-              </div>
-
-              <div class="input-field">
-                <label>Marital Status</label>
-                <select name="marital_status" required>
-                  <option value="Single" {% if employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
-                  <option value="Married" {% if employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
-                  <option value="Separated" {% if employee.marital_status == 'Separated' %}selected{% endif %}>Separated</option>
-                  <option value="Divorced" {% if employee.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
-                  <option value="Widowed" {% if employee.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
-                </select>
-              </div>
-
-              <div class="input-field">
-                <label>Department</label>
-                <select name="department" disabled>
-                  {% for dept in departments %}
-                    <option value="{{ dept.id }}" {% if employee.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <div class="input-field">
-                <label>Status</label>
-                <select name="status" disabled>
-                  <option value="1" {% if employee.active %}selected{% endif %}>Active</option>
-                  <option value="0" {% if not employee.active %}selected{% endif %}>Inactive</option>
-                </select>
-              </div>
-
-              <div class="input-field">
-                <label>Emergency Contact Name</label>
-                <input type="text" name="emergency_contact" value="{{ employee.emergency_contact }}" required />
-              </div>
-
-              <div class="input-field">
-                <label>Emergency Contact Number</label>
-                <input type="text" name="emergency_phone" value="{{ employee.emergency_phone }}" required />
-              </div>
-            </div>
-          </div>
-
-         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-            <!-- Update Button -->
-            <button type="submit" class="printing" style="background-color: #007bff; color: #fff;">
-              <span class="material-symbols-outlined">
-                update
-              </span>
-              Update
-            </button>
-
-            <!-- Cancel Button -->
-            <button type="button" class="printing" style="background: #FF6347; color:#fff" id="cancelBtn">
-              <span class="material-symbols-outlined">
-              cancel
-              </span>
-              Cancel
-            </button>
-          </div>
-
+      <!-- Personal Details -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- First Name -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">First Name</label>
+          <input type="text" name="first_name" value="{{ employee.first_name }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
         </div>
-      </form>
-    </div>
-  </center>
+
+        <!-- Middle Name -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Middle Name</label>
+          <input type="text" name="middle_name" value="{{ employee.middle_name }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Last Name -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Last Name</label>
+          <input type="text" name="last_name" value="{{ employee.last_name }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Email</label>
+          <input type="email" name="email" value="{{ employee.email }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Mobile Number -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Mobile Number</label>
+          <input type="text" name="phone" value="{{ employee.phone }}" required
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Address</label>
+          <input type="text" name="address" value="{{ employee.get_full_address() }}" required
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Date of Birth -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Date of Birth</label>
+          <input type="date" name="date_of_birth"
+                 value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Date Hired -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Date Hired</label>
+          <input type="date" name="date_hired"
+                 value="{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '' }}" readonly
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <!-- Position -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Position</label>
+          <select name="position" disabled
+                  class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+            {% for pos in positions %}
+              <option value="{{ pos.id }}" {% if employee.position_id == pos.id %}selected{% endif %}>{{ pos.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Gender -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Gender</label>
+          <select name="gender" disabled
+                  class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+            <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
+          </select>
+        </div>
+
+        <!-- Marital Status -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Marital Status</label>
+          <select name="marital_status" required
+                  class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+            <option value="Single" {% if employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
+            <option value="Married" {% if employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
+            <option value="Separated" {% if employee.marital_status == 'Separated' %}selected{% endif %}>Separated</option>
+            <option value="Divorced" {% if employee.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+            <option value="Widowed" {% if employee.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+          </select>
+        </div>
+
+        <!-- Department -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Department</label>
+          <select name="department" disabled
+                  class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if employee.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Status</label>
+          <select name="status" disabled
+                  class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+            <option value="1" {% if employee.active %}selected{% endif %}>Active</option>
+            <option value="0" {% if not employee.active %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Emergency Contact Name</label>
+          <input type="text" name="emergency_contact" value="{{ employee.emergency_contact }}" required
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
+        <div>
+          <label class="block text-gray-300 font-medium mb-1">Emergency Contact Number</label>
+          <input type="text" name="emergency_phone" value="{{ employee.emergency_phone }}" required
+                 class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square"></i> Update
+        </button>
+
+        <button type="button" id="cancelBtn"
+                class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+          <i class="fa-solid fa-xmark"></i> Cancel
+        </button>
+      </div>
+
+    </form>
+  </div>
 </main>
 
-<!-- SweetAlert CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+<!-- SweetAlert -->
 <script>
-  // SweetAlert confirmation + redirect
-  document.getElementById('editForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const form = e.target;
+  const form = document.getElementById('editForm');
+  const cancelBtn = document.getElementById('cancelBtn');
 
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
     const confirm = await Swal.fire({
       title: 'Confirm Update',
       text: 'Are you sure you want to save changes?',
@@ -159,7 +182,7 @@
 
     const response = await fetch(form.action, {
       method: 'POST',
-      body: new FormData(form),
+      body: new FormData(form)
     });
 
     const result = await response.json();
@@ -183,9 +206,7 @@
     }
   });
 
-
-    // Cancel button confirmation
-  document.getElementById('cancelBtn').addEventListener('click', async () => {
+  cancelBtn.addEventListener('click', async () => {
     const confirm = await Swal.fire({
       title: 'Cancel Editing?',
       text: 'Unsaved changes will be lost. Continue?',

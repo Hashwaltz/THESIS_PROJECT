@@ -2,122 +2,132 @@
 {% block title %}HR Officer - Employee Attendance{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Employee Attendance</b></h1>
-  </header>
+<main class="p-6 max-w-7xl mx-auto">
+
+  <!-- Header -->
+  <h1 class="text-3xl font-bold text-blue-500 mb-6 flex items-center gap-3">
+    <i class="fa-solid fa-calendar-check text-blue-400"></i>
+    Employee Attendance
+  </h1>
 
   <!-- Filter Form -->
-  <div class="search-container">
-    <div class="filter-row">
-        <!-- Start and End Date Filters -->
-        <div class="input-field">
-          <label>Start Date</label>
-          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
-        </div>
-      
+  <form method="get" id="attendanceFilterForm" class="bg-gray-800 p-4 rounded-2xl shadow-md mb-6 space-y-4">
 
-        <div class="input-field">
-          <label>End Date</label>
-          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <!-- Start Date -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-1">Start Date</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}"
+               class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+      </div>
 
-        <!-- Submit Button -->
-        <button type="submit" class="printing">
-          <span class="material-symbols-outlined">
-              database_search
-          </span>
-          Filter
+      <!-- End Date -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-1">End Date</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}"
+               class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"/>
+      </div>
+
+      <!-- Filter Button -->
+      <div class="flex gap-2">
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass"></i> Filter
         </button>
-        
       </div>
-    <form method="get" id="attendanceFilterForm">
-      <div class="filter-row">
-        
-        <!-- Department Filter -->
-        <div class="input-field">
-          <select id="department_filter" name="department">
-            <option value="">All Departments</option>
-            {% for dept in departments %}
-              <option value="{{ dept.id }}" {% if dept.id|string == department_filter %}selected{% endif %}>
-                {{ dept.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
+    </div>
 
-        <!-- Employee Filter -->
-        <div class="input-field">
-          <select id="employee_filter" name="employee">
-            <option value="">All Employees</option>
-            {% for emp in employees %}
-              <option value="{{ emp.id }}" {% if emp.id|string == employee_filter %}selected{% endif %}>
-                {{ emp.get_full_name() }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Department Filter -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-1">Department</label>
+        <select id="department_filter" name="department"
+                class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept.id|string == department_filter %}selected{% endif %}>
+              {{ dept.name }}
+            </option>
+          {% endfor %}
+        </select>
       </div>
 
-      
-    </form>
-  </div>
+      <!-- Employee Filter -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-1">Employee</label>
+        <select id="employee_filter" name="employee"
+                class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+          <option value="">All Employees</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if emp.id|string == employee_filter %}selected{% endif %}>
+              {{ emp.get_full_name() }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+  </form>
 
   <!-- Attendance Table -->
-  <div class="table-container">
-    <table>
-      <caption><b>Attendance Records</b></caption>
-      <thead>
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow-md p-4">
+    <table class="min-w-full divide-y divide-gray-700">
+      <caption class="text-left text-gray-300 font-semibold mb-2">Attendance Records</caption>
+      <thead class="bg-gray-700 text-gray-200">
         <tr>
-          <th>Full Name</th>
-          <th>Department</th>
-          <th>Date</th>
-          <th>Time In</th>
-          <th>Time Out</th>
-          <th>Status</th>
+          <th class="px-4 py-2 text-left">Full Name</th>
+          <th class="px-4 py-2 text-left">Department</th>
+          <th class="px-4 py-2 text-left">Date</th>
+          <th class="px-4 py-2 text-left">Time In</th>
+          <th class="px-4 py-2 text-left">Time Out</th>
+          <th class="px-4 py-2 text-left">Status</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-700 text-gray-200">
         {% for att in attendances.items %}
-        <tr>
-          <td data-label="Full Name">{{ att.employee.get_full_name() }}</td>
-          <td data-label="Department">{{ att.employee.department.name if att.employee.department else '-' }}</td>
-          <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
-          <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '-' }}</td>
-          <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '-' }}</td>
-          <td data-label="Status">
-            <span class="{% if att.status == 'Present' %}status-present{% elif att.status == 'Absent' %}status-absent{% else %}status-late{% endif %}">
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2">{{ att.employee.get_full_name() }}</td>
+          <td class="px-4 py-2">{{ att.employee.department.name if att.employee.department else '-' }}</td>
+          <td class="px-4 py-2">{{ att.date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-2">{{ att.time_in.strftime('%H:%M') if att.time_in else '-' }}</td>
+          <td class="px-4 py-2">{{ att.time_out.strftime('%H:%M') if att.time_out else '-' }}</td>
+          <td class="px-4 py-2">
+            <span class="font-semibold
+                         {% if att.status == 'Present' %}text-green-500
+                         {% elif att.status == 'Absent' %}text-red-500
+                         {% else %}text-yellow-400{% endif %}">
               {{ att.status }}
             </span>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="7">No attendance records found.</td>
+          <td colspan="6" class="px-4 py-2 text-center text-gray-400">No attendance records found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
     <!-- Pagination -->
-    <div class="pagination">
+    <div class="flex justify-between items-center mt-4 text-gray-200">
       {% if attendances.has_prev %}
-        <a href="{{ url_for('officer.attendance', page=attendances.prev_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}">Previous</a>
+        <a href="{{ url_for('officer.attendance', page=attendances.prev_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}"
+           class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg">Previous</a>
+      {% else %}
+        <span></span>
       {% endif %}
-      <span class="page-info">Page {{ attendances.page }} of {{ attendances.pages }}</span>
+
+      <span>Page {{ attendances.page }} of {{ attendances.pages }}</span>
+
       {% if attendances.has_next %}
-        <a href="{{ url_for('officer.attendance', page=attendances.next_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}">Next</a>
+        <a href="{{ url_for('officer.attendance', page=attendances.next_num, start_date=start_date, end_date=end_date, department=department_filter, employee=employee_filter) }}"
+           class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg">Next</a>
+      {% else %}
+        <span></span>
       {% endif %}
     </div>
   </div>
 </main>
-
-<style>
-/* Status colors */
-.status-present { color: #28a745; font-weight: bold; } /* green */
-.status-late { color: #ffc107; font-weight: bold; }   /* yellow */
-.status-absent { color: #dc3545; font-weight: bold; } /* red */
-</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {

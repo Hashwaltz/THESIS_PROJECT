@@ -10,17 +10,20 @@ from flask import (
     session,
 )
 from flask_login import login_required, current_user
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from ..models.user import User
-from ..models.hr_models import Employee, Attendance, Leave, Department, Position
+from ..models.hr_models import Employee, Attendance, Leave, Department, Position, LateComputation
 from ..forms import EmployeeForm, AttendanceForm, LeaveForm
 from ..utils import hr_officer_required, get_attendance_summary, get_current_month_range
 from .. import db
 from sqlalchemy.orm import joinedload
 import os
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 import pandas as pd
 import uuid
+import calendar
+from calendar import monthrange
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -346,7 +349,7 @@ def attendance():
     ).paginate(page=page, per_page=10, error_out=False)
 
     employees = (
-        Employee.query.filter_by(active=True).order_by(Employee.first_name).all()
+        Employee.query.filter_by(status='Active').order_by(Employee.first_name).all()
     )
     departments = Department.query.order_by(Department.name).all()
 
@@ -619,6 +622,83 @@ def view_leaves():
         leaves=leaves,
         status_filter=status_filter,
     )
+
+
+
+
+@hr_officer_bp.route('/late_computation')
+@login_required
+def late_computation():
+    # ✅ DEFAULT = CURRENT MONTH
+    today = date.today()
+    year = int(request.args.get("year", today.year))
+    month = int(request.args.get("month", today.month))
+    months = list(enumerate(calendar.month_name))[1:]
+
+    days_in_month = monthrange(year, month)[1]
+
+    employees = Employee.query.order_by(Employee.last_name).all()
+    data = []
+
+    for emp in employees:
+        row = {
+            "employee": emp,
+            "days": {},
+            "total_late_minutes": 0,
+            "total_undertime_minutes": 0,
+        }
+
+        for d in range(1, days_in_month + 1):
+            current_date = date(year, month, d)
+
+            att = Attendance.query.filter_by(
+                employee_id=emp.id,
+                date=current_date
+            ).first()
+
+            if not att:
+                continue
+
+            # LATE
+            late_minutes = 0
+            if att.time_in and att.time_in > time(8, 0):
+                late_minutes = int(
+                    (datetime.combine(current_date, att.time_in) -
+                     datetime.combine(current_date, time(8, 0))
+                    ).total_seconds() / 60
+                )
+
+            # UNDERTIME
+            undertime_minutes = 0
+            if att.time_out and att.time_out < time(17, 0):
+                undertime_minutes = int(
+                    (datetime.combine(current_date, time(17, 0)) -
+                     datetime.combine(current_date, att.time_out)
+                    ).total_seconds() / 60
+                )
+
+            row["days"][d] = {
+                "time_in": att.time_in.strftime("%I:%M %p") if att.time_in else "",
+                "late": late_minutes,
+                "time_out": att.time_out.strftime("%I:%M %p") if att.time_out else "",
+                "undertime": undertime_minutes
+            }
+
+            row["total_late_minutes"] += late_minutes
+            row["total_undertime_minutes"] += undertime_minutes
+
+        data.append(row)
+
+    return render_template(
+        "hr/officer/late_computation.html",
+        data=data,
+        year=year,
+        month=month,
+        days_in_month=days_in_month,
+        months=months,
+        datetime=datetime
+    )   
+
 
 
 # ----------------- OFFICER EDIT PASSWORD ROUTE -----------------
