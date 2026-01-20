@@ -2,164 +2,148 @@
 {% block title %}Department Head - Attendance Records{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-      <h1><b>{{ department.name if department else 'Department' }} Attendance Records</b></h1>
+<main class="p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="mb-4">
+    <h1 class="text-2xl font-bold text-blue-600">
+      {{ department.name if department else 'Department' }} Attendance Records
+    </h1>
   </header>
-  <div class="search-box">
-    <form method="get" class="filter-form" id="filterForm">
-      <div class="fields">
-        <!-- Date Filter -->
-        <div class="input-field">
-          <label for="date">Date</label>
-          <input type="date" id="date" name="date" value="{{ date_filter }}">
-        </div>
 
-        <!-- Employee Filter -->
-        <div class="input-field">
-          <label for="employee">Employee</label>
-          <select id="employee" name="employee" onchange="document.getElementById('filterForm').submit()">
-            <option value="">All Employees</option>
-            {% for emp in employees.items %}
-            <option value="{{ emp.id }}" {% if emp.id == employee_filter %}selected{% endif %}>
-              {{ emp.get_full_name() }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+  <!-- Filter Form -->
+  <form method="get" class="flex flex-col sm:flex-row sm:items-end sm:gap-4 gap-2" id="filterForm">
+    
+    <!-- Date Filter -->
+    <div class="flex flex-col">
+      <label for="date" class="text-gray-300 mb-1">Date</label>
+      <input type="date" id="date" name="date" value="{{ date_filter }}"
+             class="px-3 py-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
 
-        <!-- Filter Button (for Date only) -->
-        <div class="input-field">
-          <label>&nbsp;</label>
-          <button type="submit" class="submit">
-            <span class="material-symbols-outlined">
-            database_search
-            </span>
-            Filter
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
+    <!-- Employee Filter -->
+    <div class="flex flex-col">
+      <label for="employee" class="text-gray-300 mb-1">Employee</label>
+      <select id="employee" name="employee"
+              class="px-3 py-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Employees</option>
+        {% for emp in employees.items %}
+        <option value="{{ emp.id }}" {% if emp.id == employee_filter %}selected{% endif %}>
+          {{ emp.get_full_name() }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <!-- ============================
-       ATTENDANCE TABLE
-  ============================= -->
-  <div class="table-container">
-    <table class="responsive-table">
-      <caption><b>Attendance List</b></caption>
-      <thead>
+    <!-- Submit Button -->
+    <div class="flex items-end">
+      <button type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
+        <span class="material-symbols-outlined">database_search</span> Filter
+      </button>
+    </div>
+  </form>
+
+  <!-- Attendance Table -->
+  <div class="overflow-x-auto bg-gray-800 rounded-lg shadow-lg mt-4">
+    <table class="min-w-full text-left text-gray-200 divide-y divide-gray-700">
+      <caption class="text-lg font-semibold p-4">Attendance List</caption>
+      <thead class="bg-gray-900">
         <tr>
-          <th>Employee</th>
-          <th>Date</th>
-          <th>Time In</th>
-          <th>Time Out</th>
-          <th>Status</th>
+          <th class="px-4 py-2">Employee</th>
+          <th class="px-4 py-2">Date</th>
+          <th class="px-4 py-2">Time In</th>
+          <th class="px-4 py-2">Time Out</th>
+          <th class="px-4 py-2">Status</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-700">
         {% for att in attendances.items %}
-        <tr>
-          <td data-label="Employee">{{ att.employee.get_full_name() }}</td>
-          <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
-          <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
-          <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
-          <td data-label="Status" style="color:
-              {% if att.status == 'Present' %}green
-              {% elif att.status == 'Late' %}orange
-              {% else %}red{% endif %};">
-            {{ att.status }}
+        <tr class="hover:bg-gray-700">
+          <td class="px-4 py-2">{{ att.employee.get_full_name() }}</td>
+          <td class="px-4 py-2">{{ att.date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-2">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
+          <td class="px-4 py-2">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
+          <td class="px-4 py-2">
+            <span class="{% if att.status == 'Present' %}text-green-500{% elif att.status == 'Late' %}text-yellow-400{% else %}text-red-500{% endif %} font-semibold">
+              {{ att.status }}
+            </span>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="5">No attendance records found.</td>
+          <td colspan="5" class="px-4 py-4 text-center text-gray-400">No attendance records found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <!-- ============================
-       ATTENDANCE PAGINATION
-  ============================= -->
+  <!-- Pagination -->
   {% if attendances.pages > 1 %}
-  <div class="pagination">
+  <div class="flex justify-between items-center mt-4 text-gray-200">
     {% if attendances.has_prev %}
-    <a href="{{ url_for('dept_head.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}">Previous</a>
-    {% endif %}
+    <a href="{{ url_for('dept_head.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}"
+       class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
+    {% else %}<span></span>{% endif %}
 
-    Page {{ attendances.page }} of {{ attendances.pages }}
+    <span>Page {{ attendances.page }} of {{ attendances.pages }}</span>
 
     {% if attendances.has_next %}
-    <a href="{{ url_for('dept_head.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}">Next</a>
-    {% endif %}
+    <a href="{{ url_for('dept_head.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}"
+       class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
+    {% else %}<span></span>{% endif %}
   </div>
   {% endif %}
 
-  <!-- ============================
-       ABSENTEES SECTION
-  ============================= -->
+  <!-- Absentees Section -->
   {% if absentees %}
-  <section class="person-boxes">
-    <h2><b>Absent Employees</b></h2>
-    {% for emp in absentees %}
-    <div class="person-box">
-      <div class="box-avatar">
-        <img
-          src="{{ emp.photo if emp.photo else url_for('static', filename='images/user/user_logo.webp') }}"
-          alt="{{ emp.get_full_name() }}"
-        />
+  <section class="mt-6">
+    <h2 class="text-xl font-semibold text-red-500 mb-2">Absent Employees</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for emp in absentees %}
+      <div class="bg-red-800 p-4 rounded-lg shadow-lg flex items-center gap-4">
+        <img src="{{ emp.photo if emp.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+             alt="{{ emp.get_full_name() }}"
+             class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-white">{{ emp.get_full_name() }}</h3>
+          <p class="text-gray-300">{{ emp.position.name if emp.position else "No Position" }}</p>
+          <p class="text-red-400 font-semibold">Absent</p>
+        </div>
       </div>
-      <div class="box-bio">
-        <h3 class="bio-name">{{ emp.get_full_name() }}</h3>
-        <p class="bio-position">
-          {{ emp.position.name if emp.position else "No Position" }}
-        </p>
-        <p class="bio-status" style="color:red;">Absent</p>
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </section>
   {% endif %}
 
-  <!-- ============================
-       LATE ARRIVALS SECTION
-  ============================= -->
+  <!-- Late Arrivals Section -->
   {% if late_arrivals %}
-  <section class="person-boxes">
-    <h2><b>Late Arrivals</b></h2>
-    {% for l in late_arrivals %}
-    <div class="person-box">
-      <div class="box-avatar">
-        <img
-          src="{{ l.employee.photo if l.employee.photo else url_for('static', filename='images/user/user_logo.webp') }}"
-          alt="{{ l.employee.get_full_name() }}"
-        />
+  <section class="mt-6">
+    <h2 class="text-xl font-semibold text-yellow-400 mb-2">Late Arrivals</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for l in late_arrivals %}
+      <div class="bg-yellow-800 p-4 rounded-lg shadow-lg flex items-center gap-4">
+        <img src="{{ l.employee.photo if l.employee.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+             alt="{{ l.employee.get_full_name() }}"
+             class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-white">{{ l.employee.get_full_name() }}</h3>
+          <p class="text-gray-300">{{ l.employee.position.name if l.employee.position else "No Position" }}</p>
+          <p class="text-yellow-400 font-semibold">Late - {{ l.time_in.strftime('%H:%M') }}</p>
+        </div>
       </div>
-      <div class="box-bio">
-        <h3 class="bio-name">{{ l.employee.get_full_name() }}</h3>
-        <p class="bio-position">
-          {{ l.employee.position.name if l.employee.position else "No Position" }}
-        </p>
-        <p class="bio-status" style="color:orange;">
-          Late - {{ l.time_in.strftime('%H:%M') }}
-        </p>
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </section>
   {% endif %}
+
 </main>
 
-<!-- ============================
-     AUTO-SUBMIT SCRIPT
-============================= -->
+<!-- Auto-submit script -->
 <script>
-  // Automatically submit form when employee select changes
   document.getElementById("employee").addEventListener("change", function() {
     document.getElementById("filterForm").submit();
   });
 </script>
-
 {% endblock %}

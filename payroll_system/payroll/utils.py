@@ -61,10 +61,11 @@ def get_user_from_hr(hr_user_id):
 # Role Decorators
 # ================
 def admin_required(f):
+    """Decorator to require admin role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin():
-            abort(403)
+        if not current_user.is_authenticated or current_user.role != 'payroll_admin':
+            return jsonify({'error': 'Admin access required'}), 403
         return f(*args, **kwargs)
     return decorated_function
 

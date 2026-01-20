@@ -16,7 +16,7 @@ from payroll_system.payroll.utils import (
 )
 from payroll_system.payroll import db
 from hr_system.hr.models.user import User
-from hr_system.hr.models.hr_models import Department, Employee as HREmployee, Attendance, EmploymentType
+from hr_system.hr.models.hr_models import Department, Employee as HREmployee, Attendance, EmploymentType, Leave
 from datetime import datetime, date, timedelta, time
 import os
 from reportlab.lib.pagesizes import A4
@@ -29,6 +29,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
+from payroll_system.payroll.utils import admin_required
 from reportlab.lib.styles import getSampleStyleSheet
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -42,78 +43,70 @@ payroll_admin_bp = Blueprint(
     static_folder=STATIC_DIR,
     static_url_path="/payroll/static"
 )
+
 @payroll_admin_bp.route('/dashboard')
-@login_required
 @admin_required
+@login_required
 def payroll_dashboard():
-    # ==============================
-    # EMPLOYEE & PAYROLL COUNTS (SAFE QUERIES)
-    # ==============================
-    total_employees = Employee.query.filter_by(status="Active").count() or 0
-    total_payrolls = Payroll.query.count() or 0
-    total_present = Attendance.query.filter(func.lower(Attendance.status) == 'present').count() or 0
-    total_absent = Attendance.query.filter(func.lower(Attendance.status) == 'absent').count() or 0
-
-    # ==============================
-    # DEPARTMENTS & USERS COUNTS
-    # ==============================
-    total_departments = Department.query.count() or 0
-    total_users = User.query.filter_by(active=True).count() or 0
-    total_inactive = User.query.filter_by(active=False).count() or 0
-
-    # ==============================
-    # MONTHLY ATTENDANCE DATA (for chart)
-    # ==============================
     today = date.today()
-    first_day = today.replace(day=1)
-    next_month = (first_day.replace(day=28) + timedelta(days=4)).replace(day=1)
-    last_day = next_month - timedelta(days=1)
+    start_month = today.replace(day=1)
 
-    attendance_data = (
-        db.session.query(
-            Attendance.date,
-            func.sum(case((func.lower(Attendance.status) == "present", 1), else_=0)).label("present"),
-            func.sum(case((func.lower(Attendance.status) == "absent", 1), else_=0)).label("absent"),
-            func.sum(case((func.lower(Attendance.status) == "late", 1), else_=0)).label("late")
-        )
-        .filter(Attendance.date >= first_day, Attendance.date <= last_day)
-        .group_by(Attendance.date)
-        .order_by(Attendance.date)
-        .all()
-    )
+    # ======= KEY METRICS =======
+    total_employees = Employee.query.count()
+    employees_paid = Payroll.query.filter(
+        Payroll.status == "Approved",
+        Payroll.pay_period_start >= start_month
+    ).count()
 
-    # ==============================
-    # ENSURE BASELINE DATA FOR CHART
-    # ==============================
-    if not attendance_data:
-        fake_dates = [first_day + timedelta(days=i) for i in range(7)]
-        monthly_dates = [d.strftime("%Y-%m-%d") for d in fake_dates]
-        monthly_present_counts = [0 for _ in fake_dates]
-        monthly_absent_counts = [0 for _ in fake_dates]
-        monthly_late_counts = [0 for _ in fake_dates]
-    else:
-        monthly_dates = [a.date.strftime("%Y-%m-%d") for a in attendance_data]
-        monthly_present_counts = [a.present or 0 for a in attendance_data]
-        monthly_absent_counts = [a.absent or 0 for a in attendance_data]
-        monthly_late_counts = [a.late or 0 for a in attendance_data]
+    pending_payrolls = Payroll.query.filter(
+        Payroll.status != "Approved",
+        Payroll.pay_period_start >= start_month
+    ).count()
 
-    # ==============================
-    # RENDER TEMPLATE
-    # ==============================
+    total_payroll_amount = db.session.query(
+        func.sum(Payroll.net_pay)
+    ).filter(Payroll.pay_period_start >= start_month).scalar() or 0
+
+    avg_salary = db.session.query(
+        func.avg(Payroll.net_pay)
+    ).filter(Payroll.pay_period_start >= start_month).scalar() or 0
+
+    leave_impact = db.session.query(
+        func.count(Leave.id)
+    ).filter(Leave.status == 'Approved', Leave.start_date >= start_month).scalar() or 0
+
+    # ======= CHART DATA =======
+    monthly_data = db.session.query(
+        func.strftime('%m', Payroll.pay_period_start),
+        func.sum(Payroll.net_pay)
+    ).group_by(func.strftime('%m', Payroll.pay_period_start)).all()
+
+    chart_labels = [m for m, _ in monthly_data]
+    chart_values = [float(v or 0) for _, v in monthly_data]
+
+    # ======= TABLE DATA =======
+    recent_payrolls = Payroll.query.order_by(Payroll.created_at.desc()).limit(8).all()
+    pending_list = Payroll.query.filter(Payroll.status != 'Approved').limit(8).all()
+
+    # ======= NOTICES =======
+    upcoming_period = PayrollPeriod.query.filter(PayrollPeriod.status == 'Open').first()
+
     return render_template(
         'payroll/admin/admin_dashboard.html',
         total_employees=total_employees,
-        total_payrolls=total_payrolls,
-        total_present=total_present,
-        total_absent=total_absent,
-        total_departments=total_departments,
-        total_users=total_users,
-        total_inactive=total_inactive,
-        monthly_dates=monthly_dates,
-        monthly_present_counts=monthly_present_counts,
-        monthly_absent_counts=monthly_absent_counts,
-        monthly_late_counts=monthly_late_counts,
+        employees_paid=employees_paid,
+        pending_payrolls=pending_payrolls,
+        total_payroll_amount=total_payroll_amount,
+        avg_salary=avg_salary,
+        leave_impact=leave_impact,
+        chart_labels=chart_labels,
+        chart_values=chart_values,
+        recent_payrolls=recent_payrolls,
+        pending_list=pending_list,
+        upcoming_period=upcoming_period
     )
+
+
 
 @payroll_admin_bp.route('/process', methods=['GET'])
 @login_required

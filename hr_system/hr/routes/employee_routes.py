@@ -11,7 +11,7 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 import os
 import io
-
+from sqlalchemy import func
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -25,6 +25,7 @@ employee_bp = Blueprint(
     static_url_path='/hr/static'
     )
 
+
 @employee_bp.route('/dashboard')
 @login_required
 @employee_required
@@ -35,35 +36,20 @@ def dashboard():
         flash('Employee record not found. Please contact HR.', 'error')
         return redirect(url_for('hr_auth.logout'))
 
-    # Current month range
     today = date.today()
     start_date = today.replace(day=1)
     end_date = today
 
-    # Attendance summary
     attendance_summary = get_attendance_summary(employee.id, start_date, end_date)
-
-    # Chart data (safe default)
     attendance_chart = get_attendance_chart_data(employee.id, start_date, end_date) or {}
-
     attendance_chart.setdefault("dates", [])
     attendance_chart.setdefault("present_counts", [])
     attendance_chart.setdefault("absent_counts", [])
     attendance_chart.setdefault("late_counts", [])
 
-    # Recent leaves
-    recent_leaves = (
-        Leave.query.filter_by(employee_id=employee.id)
-        .order_by(Leave.created_at.desc())
-        .limit(5)
-        .all()
-    )
-
-    # Leave balances
     leave_types = LeaveType.query.all()
     leave_balances = {lt.name: get_leave_balance(employee.id, lt.name) for lt in leave_types}
 
-    # Working duration
     working_duration = employee.get_working_duration()
 
     return render_template(
@@ -71,17 +57,19 @@ def dashboard():
         employee=employee,
         attendance_summary=attendance_summary,
         attendance_chart=attendance_chart,
-        recent_leaves=recent_leaves,
         leave_balances=leave_balances,
         working_duration=working_duration,
         not_assigned=False
     )
+
+
 
 # ---------------- ATTENDANCE ----------------
 @employee_bp.route('/attendance')
 @login_required
 @employee_required
 def attendance():
+    
     employee = current_user.employee_profile
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')

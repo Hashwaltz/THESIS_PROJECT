@@ -28,6 +28,7 @@ def create_app():
     from hr_system.hr.routes.auth_routes import hr_auth_bp
     from hr_system.hr.routes.hr_admin_routes import hr_admin_bp
     from hr_system.hr.routes.hr_officer_routes import hr_officer_bp
+    from hr_system.hr.routes.leave_officer import leave_officer_bp
     from hr_system.hr.routes.dept_head_routes import dept_head_bp
     from hr_system.hr.routes.employee_routes import employee_bp
     from hr_system.hr.routes.api_routes import api_bp
@@ -35,6 +36,7 @@ def create_app():
     app.register_blueprint(hr_auth_bp)
     app.register_blueprint(hr_admin_bp, url_prefix="/hr/admin")
     app.register_blueprint(hr_officer_bp, url_prefix="/hr/officer")
+    app.register_blueprint(leave_officer_bp, url_prefix="/hr/leave_officer")
     app.register_blueprint(dept_head_bp, url_prefix="/hr/dept_head")
     app.register_blueprint(employee_bp, url_prefix="/hr/employee")
     app.register_blueprint(api_bp, url_prefix="/api/hr")

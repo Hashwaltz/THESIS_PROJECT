@@ -1,147 +1,160 @@
-{% extends 'hr/head/head_base.html' %}
-{% block title %}Department Head - Dashboard{% endblock %}
+{% extends "hr/employee/employee_base.html" %}
+{% block title %}Employee Dashboard{% endblock %}
+
 {% block content %}
+<section class="p-6 space-y-8">
 
-{% if not_assigned %}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-Swal.fire({
-    icon: 'info',
-    title: 'Access Denied',
-    text: 'You are not assigned as a department head yet. Please wait for the admins to assign you.',
-    confirmButtonText: 'OK'
-}).then((result) => {
-    if (result.isConfirmed) {
-        window.location.href = "{{ url_for('hr_auth.logout') }}";
-    }
-});
-</script>
-{% endif %}
+  {% if not_assigned %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    Swal.fire({
+      icon: 'info',
+      title: 'Access Denied',
+      text: 'You are not assigned as a department head yet.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = "{{ url_for('hr_auth.logout') }}";
+    });
+  </script>
+  {% endif %}
 
-<div class="p-6 space-y-8">
   <!-- Header -->
-  <header>
-    <h1 class="text-2xl font-bold text-gray-800">{{ current_user.department.name }} Department Head Dashboard</h1>
-  </header>
+  <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+    <span class="material-symbols-outlined text-3xl">dashboard</span>
+    {{ employee.get_full_name() }} Dashboard
+  </h1>
 
-  <!-- Info Boxes -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-
-    <!-- Employees -->
-    <div class="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border hover:shadow-lg transition">
-      <span class="material-symbols-outlined text-gray-600 text-5xl">group</span>
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-blue-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-blue-400 text-3xl">groups</span>
+      </div>
       <div>
-        <p class="text-3xl font-bold">{{ total_employees }}</p>
-        <p class="text-gray-600 text-sm">Employees<br>{{ current_user.department.name }}</p>
+        <p class="text-gray-400 text-sm">Employees</p>
+        <h2 class="text-3xl font-bold text-blue-400 mt-1">{{ employee.department.employees|length }}</h2>
       </div>
     </div>
 
-    <!-- Recent Leaves -->
-    <div class="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border hover:shadow-lg transition">
-      <span class="material-symbols-outlined text-gray-600 text-5xl">assignment_add</span>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-emerald-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
+      </div>
       <div>
-        <p class="text-3xl font-bold">{{ recent_leaves|length }}</p>
-        <p class="text-gray-600 text-sm">Recent Leave Requests</p>
+        <p class="text-gray-400 text-sm">Present (Month)</p>
+        <h2 class="text-3xl font-bold text-emerald-400 mt-1">{{ attendance_summary.total_present or 0 }}</h2>
       </div>
     </div>
 
-    <!-- Present -->
-    <div class="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border hover:shadow-lg transition">
-      <span class="material-symbols-outlined text-gray-600 text-5xl">check_circle</span>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-red-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-red-400 text-3xl">cancel</span>
+      </div>
       <div>
-        <p class="text-3xl font-bold">{{ attendance_summary.total_present }}</p>
-        <p class="text-gray-600 text-sm">Present (This Month)</p>
+        <p class="text-gray-400 text-sm">Absent (Month)</p>
+        <h2 class="text-3xl font-bold text-red-400 mt-1">{{ attendance_summary.total_absent or 0 }}</h2>
       </div>
     </div>
 
-    <!-- Absent -->
-    <div class="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border hover:shadow-lg transition">
-      <span class="material-symbols-outlined text-gray-600 text-5xl">cancel</span>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-yellow-400 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-yellow-400 text-3xl">schedule</span>
+      </div>
       <div>
-        <p class="text-3xl font-bold">{{ attendance_summary.total_absent }}</p>
-        <p class="text-gray-600 text-sm">Absent (This Month)</p>
+        <p class="text-gray-400 text-sm">Late (Month)</p>
+        <h2 class="text-3xl font-bold text-yellow-400 mt-1">{{ attendance_summary.total_late or 0 }}</h2>
       </div>
     </div>
+  </div>
 
-    <!-- Late -->
-    <div class="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border hover:shadow-lg transition">
-      <span class="material-symbols-outlined text-gray-600 text-5xl">schedule</span>
-      <div>
-        <p class="text-3xl font-bold">{{ attendance_summary.total_late }}</p>
-        <p class="text-gray-600 text-sm">Late (This Month)</p>
+  <!-- Attendance Trend Chart -->
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+    <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined">timeline</span>
+      Monthly Attendance Trend
+    </h3>
+    <div class="relative h-[400px]">
+      <canvas id="attendanceTrendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Leave Credits Available -->
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+    <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined">event_available</span>
+      Leave Credits Available
+    </h3>
+    <div class="bg-slate-700 p-4 rounded-xl flex flex-col sm:flex-row sm:justify-between items-center gap-4">
+      <div class="text-center sm:text-left">
+        <p class="text-gray-300 text-sm">Vacation Leave</p>
+        <h2 class="text-2xl font-bold text-green-400">{{ leave_balances.Vacation or 0 }} days</h2>
+      </div>
+      <div class="text-center sm:text-left">
+        <p class="text-gray-300 text-sm">Sick Leave</p>
+        <h2 class="text-2xl font-bold text-yellow-400">{{ leave_balances.Sick or 0 }} days</h2>
+      </div>
+      <div class="text-center sm:text-left">
+        <p class="text-gray-300 text-sm">Emergency Leave</p>
+        <h2 class="text-2xl font-bold text-red-400">{{ leave_balances.Emergency or 0 }} days</h2>
       </div>
     </div>
+    {% if leave_balances.note %}
+      <p class="text-gray-400 text-sm mt-3 italic">{{ leave_balances.note }}</p>
+    {% endif %}
+  </div>
 
-  </section>
+</section>
 
-  <!-- Chart Section -->
-  <section class="mt-10">
-    <div class="bg-white p-6 rounded-xl shadow-md border">
-      <h2 class="text-lg font-semibold mb-4 text-gray-700">Monthly Attendance Overview</h2>
-      <div class="h-96">
-        <canvas id="monthlyAttendanceChart"></canvas>
-      </div>
-    </div>
-  </section>
-</div>
-
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const monthlyDates = {{ attendance_chart.dates | tojson }};
-  const monthlyPresentCounts = {{ attendance_chart.present_counts | tojson }};
-  const monthlyAbsentCounts = {{ attendance_chart.absent_counts | tojson }};
-  const monthlyLateCounts = {{ attendance_chart.late_counts | tojson }};
-
-
-  const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: monthlyDates,
-      datasets: [
-        {
-          label: 'Present',
-          data: monthlyPresentCounts,
-          borderColor: '#4ade80',
-          backgroundColor: 'rgba(74, 222, 128, 0.3)',
-          fill: true,
-          tension: 0.3,
-          borderWidth: 2
-        },
-        {
-          label: 'Absent',
-          data: monthlyAbsentCounts,
-          borderColor: '#f87171',
-          backgroundColor: 'rgba(248, 113, 113, 0.3)',
-          fill: true,
-          tension: 0.3,
-          borderWidth: 2
-        },
-        {
-          label: 'Late',
-          data: monthlyLateCounts,
-          borderColor: '#fbbf24',
-          backgroundColor: 'rgba(251, 191, 36, 0.3)',
-          fill: true,
-          tension: 0.3,
-          borderWidth: 2
-        }
-      ]
+function baseOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: 20 },
+    plugins: {
+      legend: { labels: { color: "#d1d5db" } }
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom' }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Date' } },
-        y: { beginAtZero: true, title: { display: true, text: 'Count' } }
-      }
+    scales: {
+      x: { ticks: { color: "#9ca3af" } },
+      y: { ticks: { color: "#9ca3af" }, beginAtZero: true }
     }
-  });
+  };
+}
+
+new Chart(document.getElementById("attendanceTrendChart"), {
+  type: "line",
+  data: {
+    labels: {{ attendance_chart.dates|tojson }},
+    datasets: [
+      {
+        label: "Present",
+        data: {{ attendance_chart.present_counts|tojson }},
+        borderColor: "#10b981",
+        backgroundColor: "#10b98133",
+        tension: 0.4,
+        fill: true
+      },
+      {
+        label: "Absent",
+        data: {{ attendance_chart.absent_counts|tojson }},
+        borderColor: "#ef4444",
+        backgroundColor: "#ef444433",
+        tension: 0.4,
+        fill: true
+      },
+      {
+        label: "Late",
+        data: {{ attendance_chart.late_counts|tojson }},
+        borderColor: "#facc15",
+        backgroundColor: "#facc1533",
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  },
+  options: baseOptions()
 });
 </script>
-
 {% endblock %}

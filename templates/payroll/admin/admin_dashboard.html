@@ -1,157 +1,168 @@
-{% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}PayrollAdmin-Dashboard{% endblock %}
-{% block content%}
+{% extends "payroll/admin/payroll_admin_base.html" %}
 
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Admin Dashboard</b></h1>
-  </header>
+{% block title %}Payroll Dashboard{% endblock %}
 
-  <div class="content">
-    <section class="info-boxes">
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            group
-          </span>
-        </div>
+{% block content %}
+<div class="p-6 space-y-6">
 
-        <div class="box-content">
-          <span class="big">{{total_employees}}</span>
-          Total Employees
-        </div>
-      </div>
+  <!-- ===== METRICS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Total Employees</h3>
+      <p class="text-3xl font-bold text-gray-800">{{ total_employees }}</p>
+    </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-         <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            apartment
-          </span>
-        </div>
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Employees Paid (This Month)</h3>
+      <p class="text-3xl font-bold text-green-600">{{ employees_paid }}</p>
+    </div>
 
-        <div class="box-content">
-          <span class="big">{{ total_departments }}</span>
-          Total Departments
-        </div>
-      </div>
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Pending Payrolls</h3>
+      <p class="text-3xl font-bold text-yellow-500">{{ pending_payrolls }}</p>
+    </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            account_circle
-          </span>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_users }}</span>
-          Active Users
-        </div>
-      </div>
-      
-
-        <div class="info-box">
-        <div class="box-icon">
-         <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            account_circle_off
-          </span>
-        </div>
-
-        <div class="box-content">
-          <span class="big">{{ total_inactive }}</span>
-          Inactive Users
-        </div>
-      </div>
-    </section>
-  </div>
-  <!-- Chart Section -->
-  <div class="chart-container" style="height: 400px; margin-top: 20px;">
-    <canvas id="monthlyAttendanceChart"></canvas>
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Total Payroll Amount</h3>
+      <p class="text-3xl font-bold text-blue-600">
+        ₱{{ "{:,.2f}".format(total_payroll_amount) }}
+      </p>
+    </div>
   </div>
 
-  </main>
+  <!-- ===== SECOND METRICS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Average Salary</h3>
+      <p class="text-2xl font-bold text-indigo-600">
+        ₱{{ "{:,.2f}".format(avg_salary) }}
+      </p>
+    </div>
 
-<!-- Chart.js -->
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-gray-500 text-sm">Approved Leaves This Month</h3>
+      <p class="text-2xl font-bold text-red-500">{{ leave_impact }}</p>
+    </div>
+  </div>
+
+  <!-- ===== PAYROLL CHART ===== -->
+  <div class="bg-white rounded-xl shadow p-6 h-[420px]">
+    <h2 class="text-lg font-semibold mb-4">Monthly Payroll Trend</h2>
+    <canvas id="payrollChart"></canvas>
+  </div>
+
+  <!-- ===== TABLES ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Recent Payrolls -->
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="font-semibold mb-4">Recent Payrolls</h3>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-gray-500 border-b">
+            <th class="py-2 text-left">Employee</th>
+            <th class="py-2 text-left">Net Pay</th>
+            <th class="py-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payroll in recent_payrolls %}
+          <tr class="border-b">
+            <td class="py-2">{{ payroll.employee.full_name }}</td>
+            <td class="py-2">₱{{ "{:,.2f}".format(payroll.net_pay) }}</td>
+            <td class="py-2">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if payroll.status == 'Approved' %}
+                  bg-green-100 text-green-700
+                {% else %}
+                  bg-yellow-100 text-yellow-700
+                {% endif %}
+              ">
+                {{ payroll.status }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="py-4 text-center text-gray-400">
+              No payroll records found
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pending Payrolls -->
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="font-semibold mb-4">Pending Payrolls</h3>
+      <ul class="space-y-3">
+        {% for payroll in pending_list %}
+        <li class="flex justify-between items-center">
+          <span>{{ payroll.employee.full_name }}</span>
+          <span class="text-yellow-600 font-semibold">{{ payroll.status }}</span>
+        </li>
+        {% else %}
+        <p class="text-gray-400 text-sm">No pending payrolls</p>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ===== PAYROLL PERIOD NOTICE ===== -->
+  {% if upcoming_period %}
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+    <p class="text-blue-700 font-medium">
+      Open Payroll Period:
+      {{ upcoming_period.start_date }} – {{ upcoming_period.end_date }}
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ===== CHART JS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const monthlyDates = {{ monthly_dates | tojson }};
-    const monthlyPresentCounts = {{ monthly_present_counts | tojson }};
-    const monthlyAbsentCounts = {{ monthly_absent_counts | tojson }};
-    const monthlyLateCounts = {{ monthly_late_counts | tojson }};
 
-    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-    const monthlyAttendanceChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: monthlyDates,
-        datasets: [
-          {
-            label: 'Present',
-            data: monthlyPresentCounts,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.3)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-          },
-          {
-            label: 'Absent',
-            data: monthlyAbsentCounts,
-            borderColor: 'rgba(255, 99, 132, 1)',
-            backgroundColor: 'rgba(255, 99, 132, 0.3)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-          },
-          {
-            label: 'Late',
-            data: monthlyLateCounts,
-            borderColor: 'rgba(255, 206, 86, 1)',
-            backgroundColor: 'rgba(255, 206, 86, 0.3)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const labels = {{ chart_labels | default([]) | tojson }};
+  const values = {{ chart_values | default([]) | tojson }};
+
+  const ctx = document.getElementById('payrollChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Total Payroll (₱)',
+        data: values,
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => '₱' + value.toLocaleString()
           }
-        ]
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Date of Month',
-              font: { weight: 'bold' }
-            }
-          },
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Employees',
-              font: { weight: 'bold' }
-            },
-            ticks: { stepSize: 1, precision: 0 }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Monthly Attendance Overview',
-            font: { size: 20, weight: 'bold' }
-          },
-          tooltip: { mode: 'index', intersect: false },
-          legend: {
-            display: true,
-            labels: {
-              font: { weight: 'bold' }
-            }
-          }
-        },
-        interaction: { mode: 'nearest', intersect: true }
+      plugins: {
+        legend: {
+          labels: { font: { weight: 'bold' } }
+        }
       }
-    });
+    }
   });
+});
 </script>
+
 {% endblock %}

@@ -1,17 +1,19 @@
-{% extends 'hr/admin/admin_base.html' %}
-{% block title %}Dashboard | HR Admin{% endblock %}
-{% block content %}
+{% extends "payroll/admin/payroll_admin_base.html" %}
 
+{% block title %}Payroll Dashboard{% endblock %}
+
+{% block content %}
 <section class="p-6">
 
-  <!-- Header -->
+  <!-- ===== HEADER ===== -->
   <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
-    <span class="material-symbols-outlined text-3xl">dashboard</span>
-    HR Dashboard
+    <span class="material-symbols-outlined text-3xl">payments</span>
+    Payroll Dashboard
   </h1>
 
-  <!-- Stats Overview -->
+  <!-- ===== METRICS ===== -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
       <div class="p-3 bg-blue-600 bg-opacity-20 rounded-full">
         <span class="material-symbols-outlined text-blue-400 text-3xl">groups</span>
@@ -24,198 +26,189 @@
 
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
       <div class="p-3 bg-emerald-600 bg-opacity-20 rounded-full">
-        <span class="material-symbols-outlined text-emerald-400 text-3xl">person</span>
+        <span class="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
       </div>
       <div>
-        <p class="text-gray-400">Active Employees</p>
-        <h2 class="text-3xl font-bold text-emerald-400 mt-2">{{ active_employees }}</h2>
+        <p class="text-gray-400">Employees Paid</p>
+        <h2 class="text-3xl font-bold text-emerald-400 mt-2">{{ employees_paid }}</h2>
       </div>
     </div>
 
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-yellow-400 bg-opacity-20 rounded-full">
-        <span class="material-symbols-outlined text-yellow-400 text-3xl">apartment</span>
+      <div class="p-3 bg-yellow-500 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-yellow-400 text-3xl">hourglass_top</span>
       </div>
       <div>
-        <p class="text-gray-400">Total Departments</p>
-        <h2 class="text-3xl font-bold text-yellow-400 mt-2">{{ total_departments }}</h2>
+        <p class="text-gray-400">Pending Payrolls</p>
+        <h2 class="text-3xl font-bold text-yellow-400 mt-2">{{ pending_payrolls }}</h2>
       </div>
     </div>
 
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-pink-400 bg-opacity-20 rounded-full">
-        <span class="material-symbols-outlined text-pink-400 text-3xl">event_available</span>
+      <div class="p-3 bg-indigo-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-indigo-400 text-3xl">account_balance_wallet</span>
       </div>
       <div>
-        <p class="text-gray-400">Monthly Attendance</p>
-        <h2 class="text-3xl font-bold text-pink-400 mt-2">
-          {% if attendance_counts|length > 0 %}
-            {{ (attendance_counts|sum / attendance_counts|length)|round(2) }}%
-          {% else %}
-            0%
-          {% endif %}
+        <p class="text-gray-400">Total Payroll</p>
+        <h2 class="text-2xl font-bold text-indigo-400 mt-2">
+          ₱{{ "{:,.2f}".format(total_payroll_amount) }}
         </h2>
       </div>
     </div>
+
   </div>
 
-  <!-- Top Components: Reminders, Quick Actions, Notes -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <!-- ===== SECOND ROW METRICS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
 
-    <!-- Reminders -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-purple-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-purple-400 text-3xl">insights</span>
+      </div>
+      <div>
+        <p class="text-gray-400">Average Salary</p>
+        <h2 class="text-2xl font-bold text-purple-400 mt-2">
+          ₱{{ "{:,.2f}".format(avg_salary) }}
+        </h2>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-red-600 bg-opacity-20 rounded-full">
+        <span class="material-symbols-outlined text-red-400 text-3xl">event_busy</span>
+      </div>
+      <div>
+        <p class="text-gray-400">Approved Leaves</p>
+        <h2 class="text-2xl font-bold text-red-400 mt-2">{{ leave_impact }}</h2>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== PAYROLL CHART ===== -->
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 mb-8">
+    <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined">trending_up</span>
+      Monthly Payroll Trend
+    </h3>
+    <div class="relative h-[280px]">
+      <canvas id="payrollChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== TABLES ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Recent Payrolls -->
     <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">notifications</span> Reminders
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">history</span>
+        Recent Payrolls
       </h3>
-      <ul class="list-disc list-inside text-gray-300 space-y-2">
-        {% for reminder in reminders %}
-          <li>{{ reminder }}</li>
+
+      <table class="w-full text-sm text-gray-300">
+        <thead class="border-b border-gray-700">
+          <tr>
+            <th class="py-2 text-left">Employee</th>
+            <th class="py-2 text-left">Net Pay</th>
+            <th class="py-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payroll in recent_payrolls %}
+          <tr class="border-b border-gray-700">
+            <td class="py-2">{{ payroll.employee.full_name }}</td>
+            <td class="py-2">₱{{ "{:,.2f}".format(payroll.net_pay) }}</td>
+            <td class="py-2">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if payroll.status == 'Approved' %}
+                  bg-emerald-600 bg-opacity-20 text-emerald-400
+                {% else %}
+                  bg-yellow-500 bg-opacity-20 text-yellow-400
+                {% endif %}
+              ">
+                {{ payroll.status }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="py-4 text-center text-gray-500">No payroll records</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pending Payrolls -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">pending_actions</span>
+        Pending Payrolls
+      </h3>
+
+      <ul class="space-y-3 text-gray-300">
+        {% for payroll in pending_list %}
+        <li class="flex justify-between">
+          <span>{{ payroll.employee.full_name }}</span>
+          <span class="text-yellow-400 font-semibold">{{ payroll.status }}</span>
+        </li>
         {% else %}
-          <li>No reminders</li>
+        <li class="text-gray-500">No pending payrolls</li>
         {% endfor %}
       </ul>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">bolt</span> Quick Actions
-      </h3>
-      <div class="flex flex-col gap-3">
-        <a href="{{ url_for('hr_admin.view_employees') }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-center">Add Employee</a>
-        <a href="{{ url_for('hr_admin.attendance_report') }}" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-center">Generate Attendance Report</a>
-        <a href="{{ url_for('hr_admin.leave_report') }}" class="bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded text-center">Generate Leave Report</a>
-      </div>
-    </div>
-
-    <!-- Notes -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">sticky_note_2</span> Notes
-      </h3>
-      <ul class="list-disc list-inside text-gray-300 space-y-2">
-        {% for note in notes %}
-          <li>{{ note }}</li>
-        {% else %}
-          <li>No notes</li>
-        {% endfor %}
-      </ul>
-    </div>
-
   </div>
 
-  <!-- Charts Section -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-    <!-- Employee Growth -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">trending_up</span> Employee Growth
-      </h3>
-      <div class="relative h-[240px]">
-        <canvas id="employeeChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Department Distribution -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">apartment</span> Department Distribution
-      </h3>
-      <div class="relative h-[240px]">
-        <canvas id="deptChart"></canvas>
-      </div>
-    </div>
+  <!-- ===== PAYROLL PERIOD NOTICE ===== -->
+  {% if upcoming_period %}
+  <div class="bg-blue-600 bg-opacity-10 border border-blue-500 text-blue-400 rounded-xl p-4 mt-8">
+    <strong>Open Payroll Period:</strong>
+    {{ upcoming_period.start_date }} – {{ upcoming_period.end_date }}
   </div>
-
-  <!-- Additional Charts -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-
-    <!-- Employees per Barangay -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">location_city</span> Employees per Barangay
-      </h3>
-      <div class="relative h-[240px]">
-        <canvas id="barangayChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Attendance Overview -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">event_available</span> Attendance Overview
-      </h3>
-      <div class="relative h-[240px]">
-        <canvas id="attendanceChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Leave Requests -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined">assignment</span> Leave Requests
-      </h3>
-      <div class="relative h-[240px]">
-        <canvas id="leaveChart"></canvas>
-      </div>
-    </div>
-
-  </div>
+  {% endif %}
 
 </section>
 
-<!-- Chart.js -->
+<!-- ===== CHART JS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  function createLineChart(ctx, labels, data, color="#3b82f6", labelName="") {
-    return new Chart(ctx, {
-      type: "line",
-      data: { labels, datasets: [{ label: labelName, data, borderColor: color, backgroundColor: color+"33", tension: 0.4, fill: true }]},
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: 20 },
-        plugins: { legend: { labels: { color: "#d1d5db" } } },
-        scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } }
-      }
-    });
-  }
+document.addEventListener('DOMContentLoaded', function () {
+  const labels = {{ chart_labels | default([]) | tojson }};
+  const values = {{ chart_values | default([]) | tojson }};
 
-  function createDoughnutChart(ctx, labels, data, colors) {
-    return new Chart(ctx, {
-      type: "doughnut",
-      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }]},
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "68%",
-        layout: { padding: 20 },
-        plugins: { legend: { position: "bottom", labels: { color: "#d1d5db", padding: 14, boxWidth: 12 } } }
+  new Chart(document.getElementById('payrollChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Total Payroll',
+        data: values,
+        borderColor: '#60a5fa',
+        backgroundColor: '#60a5fa33',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#d1d5db' } }
+      },
+      scales: {
+        x: { ticks: { color: '#9ca3af' } },
+        y: {
+          ticks: {
+            color: '#9ca3af',
+            callback: value => '₱' + value.toLocaleString()
+          }
+        }
       }
-    });
-  }
-
-  function createBarChart(ctx, labels, data, color="#3b82f6") {
-    return new Chart(ctx, {
-      type: "bar",
-      data: { labels, datasets: [{ label: "Employees", data, backgroundColor: color }] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: 20 },
-        plugins: { legend: { labels: { color: "#d1d5db" } } },
-        scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } }
-      }
-    });
-  }
-
-  // Initialize charts
-  createLineChart(document.getElementById("employeeChart"), {{ growth_labels|tojson }}, {{ growth_counts|tojson }}, "#3b82f6", "Employees");
-  createDoughnutChart(document.getElementById("deptChart"), {{ dept_labels|tojson }}, {{ dept_counts|tojson }}, ["#3b82f6","#10b981","#facc15","#f87171","#a855f7"]);
-  createBarChart(document.getElementById("barangayChart"), {{ barangay_labels|tojson }}, {{ barangay_counts|tojson }});
-  createLineChart(document.getElementById("attendanceChart"), {{ attendance_labels|tojson }}, {{ attendance_counts|tojson }}, "#38bdf8", "Attendance %");
-  createDoughnutChart(document.getElementById("leaveChart"), {{ leave_labels|tojson }}, {{ leave_counts|tojson }}, ["#10b981","#facc15","#ef4444"]);
+    }
+  });
+});
 </script>
 
 {% endblock %}

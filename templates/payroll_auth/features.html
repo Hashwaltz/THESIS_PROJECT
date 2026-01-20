@@ -1,0 +1,91 @@
+{% extends "payroll_base.html" %}
+{% block title %}Payroll | GovHRPay{% endblock %}
+
+{% block content %}
+<section class="w-full bg-gray-950 text-gray-100">
+
+  <!-- HERO SECTION -->
+  <div class="relative bg-gradient-to-br from-green-700 to-emerald-900 py-20 text-center">
+    <div class="max-w-4xl mx-auto px-6">
+      <h1 class="text-5xl font-bold mb-4 text-white">Payroll Management</h1>
+      <p class="text-gray-200 text-lg leading-relaxed">
+        Smart, accurate, and automated payroll processing for the Local Government of Norzagaray.
+      </p>
+    </div>
+  </div>
+
+  <!-- PAYROLL OVERVIEW -->
+  <section class="max-w-6xl mx-auto py-20 px-6 grid lg:grid-cols-2 gap-12 items-center">
+    <div>
+      <h2 class="text-3xl font-bold mb-4 text-green-400">Why GovHRPay Payroll?</h2>
+      <p class="text-gray-300 leading-relaxed mb-6">
+        GovHRPay’s Payroll Module simplifies salary computation, deductions, and benefits management.
+        It ensures accurate and transparent payroll processing while complying with government standards.
+      </p>
+      <ul class="text-gray-300 space-y-3">
+        <li>✔ Automated salary computation</li>
+        <li>✔ Attendance-based payroll integration</li>
+        <li>✔ Government deductions (GSIS, PhilHealth, Pag-IBIG, SSS, Tax)</li>
+        <li>✔ Payslip generation and history</li>
+        <li>✔ Secure and role-based access</li>
+      </ul>
+    </div>
+    <div class="flex justify-center">
+      <img src="{{ url_for('hr_auth.static', filename='img/payroll_overview.avif') }}" 
+           alt="Payroll System" 
+           class="rounded-2xl shadow-2xl w-full max-w-md">
+    </div>
+  </section>
+
+  <!-- PAYROLL FEATURES -->
+  <section class="bg-gray-900 py-20">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold text-green-400 mb-12">Payroll Features</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-calculator text-5xl text-green-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Salary Computation</h3>
+          <p class="text-gray-400">Automatically calculates salaries, overtime, and adjustments.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-file-invoice text-5xl text-yellow-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Payslip Generation</h3>
+          <p class="text-gray-400">Generate downloadable payslips with full breakdown of earnings and deductions.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-shield-alt text-5xl text-blue-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Compliance Ready</h3>
+          <p class="text-gray-400">Built to follow Philippine government payroll standards and audit requirements.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-history text-5xl text-pink-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Payroll History</h3>
+          <p class="text-gray-400">Track previous payroll periods and salary releases easily.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-bell text-5xl text-cyan-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Payroll Notifications</h3>
+          <p class="text-gray-400">Employees receive alerts when payroll is released or updated.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+          <i class="fas fa-database text-5xl text-purple-400 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Secure Records</h3>
+          <p class="text-gray-400">Encrypted payroll data storage with full audit trail.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-950 text-gray-400 text-center py-6">
+    <p>&copy; 2025 GovHRPay | Payroll Module</p>
+  </footer>
+</section>
+{% endblock %}

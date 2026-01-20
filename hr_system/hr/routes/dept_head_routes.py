@@ -11,6 +11,8 @@ from io import BytesIO
 from flask import send_file
 import os
 from openpyxl import Workbook
+from types import SimpleNamespace
+
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -25,27 +27,39 @@ dept_head_bp = Blueprint(
     )
 
 
+
 @dept_head_bp.route('/dashboard')
 @login_required
 @dept_head_required
 def dashboard():
     """Department Head Dashboard"""
 
+    # Determine department
     department = None
     if current_user.department_id:
         department = Department.query.get(current_user.department_id)
     else:
         department = Department.query.filter_by(head_id=current_user.id).first()
 
+    # Not assigned yet
     if not department:
-        # Pass empty placeholders so template does not break
         return render_template(
             'hr/head/head_dashboard.html',
             not_assigned=True,
             department=None,
             total_employees=0,
             recent_leaves=[],
-            attendance_summary={'total_present': 0, 'total_absent': 0, 'total_late': 0, 'dates': [], 'present_counts': [], 'absent_counts': [], 'late_counts': []}
+            attendance_summary=SimpleNamespace(
+                total_present=0,
+                total_absent=0,
+                total_late=0,
+                dates=[],
+                present_counts=[],
+                absent_counts=[],
+                late_counts=[]
+            ),
+            reminders=[],
+            notes=[]
         )
 
     # Update user's department_id if missing
@@ -57,9 +71,11 @@ def dashboard():
     department_employees = Employee.query.filter_by(department_id=department.id, status="Active").all()
     total_employees = len(department_employees)
 
-    # Recent leaves
+    # Recent leaves (with employee relationship loaded)
     recent_leaves = (
-        Leave.query.join(Employee)
+        Leave.query
+        .join(Employee)
+        .options(db.joinedload(Leave.employee))
         .filter(Employee.department_id == department.id)
         .order_by(Leave.created_at.desc())
         .limit(5)
@@ -68,17 +84,32 @@ def dashboard():
 
     # Attendance summary
     start_date, end_date = get_current_month_range()
-    attendance_summary = get_department_attendance_summary(department.id, start_date, end_date)
+    summary_raw = get_department_attendance_summary(department.id, start_date, end_date)
+
+    attendance_summary = SimpleNamespace(
+        total_present=summary_raw.get('total_present', 0),
+        total_absent=summary_raw.get('total_absent', 0),
+        total_late=summary_raw.get('total_late', 0),
+        dates=[d.strftime("%Y-%m-%d") for d in summary_raw.get('dates', [])],
+        present_counts=list(summary_raw.get('present_counts', [])),
+        absent_counts=list(summary_raw.get('absent_counts', [])),
+        late_counts=list(summary_raw.get('late_counts', []))
+    )
+
+    # Dummy reminders and notes
+    reminders = ["Submit monthly report", "Approve leave requests"]
+    notes = ["Team meeting on Friday", "Prepare onboarding documents"]
 
     return render_template(
         'hr/head/head_dashboard.html',
+        not_assigned=False,
         department=department,
         total_employees=total_employees,
         recent_leaves=recent_leaves,
         attendance_summary=attendance_summary,
-        not_assigned=False
+        reminders=reminders,
+        notes=notes
     )
-
 
 
 @dept_head_bp.route('/employee/<int:employee_id>/edit')
@@ -114,7 +145,7 @@ def employees():
     # Only employees in the same department
     query = Employee.query.filter_by(
         department=department,
-        active=True
+        status="Active"
     )
 
     # Apply search if given
@@ -197,7 +228,7 @@ def attendance():
     # --- EMPLOYEES: same department ---
     emp_query = Employee.query.filter(
         Employee.department_id == dept_id,
-        Employee.active == True
+        Employee.status == "Active"
     ).filter(Employee.id != current_user.id)
 
     if search:
@@ -224,7 +255,7 @@ def attendance():
         attended_ids = [att.employee_id for att in att_query.all()]
         absentees = Employee.query.filter(
             Employee.department_id == dept_id,
-            Employee.active == True,
+            Employee.status == "Active",
             ~Employee.id.in_(attended_ids)
         ).all()
 
@@ -337,7 +368,7 @@ def leaves():
     department_employee_ids = [
         e.id for e in Employee.query.filter_by(
             department=current_user.department,
-            active=True
+            status="Active"
         ).all()
     ]
 

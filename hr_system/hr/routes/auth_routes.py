@@ -52,10 +52,12 @@ def hr_features():
 def login():
     if current_user.is_authenticated:
         role = current_user.role.lower()
-        if role == 'admin':
+        if role == 'hr_admin':
             return redirect(url_for('hr_admin.hr_dashboard'))   
         elif role == 'officer':
             return redirect(url_for('officer.hr_dashboard'))
+        elif role == 'leave_officer':
+            return redirect(url_for('leave_officer.leave_dashboard'))
         elif role == 'dept_head':
             return redirect(url_for('dept_head.dashboard'))
         elif role in ['employee', 'staff']:

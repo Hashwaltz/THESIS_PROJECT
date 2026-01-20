@@ -63,9 +63,9 @@ def login():
 # =========================================================
 def redirect_by_role(role: str):
     role = role.lower() if role else ""
-    if role in ["admin"]:
+    if role in ["payroll_admin"]:
         return redirect(url_for("payroll_admin.payroll_dashboard"))
-    elif role in ["staff"]:
+    elif role in ["payroll_staff"]:
         return redirect(url_for("payroll_staff.dashboard"))
     elif role in ["employee", "officer", "dept_head"]:
         return redirect(url_for("payroll_employee.dashboard"))
@@ -155,3 +155,13 @@ def change_password():
         return redirect(url_for("payroll_auth.profile"))
 
     return render_template("change_password.html")
+
+
+
+@payroll_auth_bp.route("/about")
+def about_payroll():
+    return render_template("payroll_auth/about.html")
+
+@payroll_auth_bp.route("/features")
+def payroll_features():
+    return render_template("payroll_auth/features.html")

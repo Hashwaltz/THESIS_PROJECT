@@ -149,6 +149,7 @@ def employees():
 @hr_officer_bp.route("/employee/<int:employee_id>/view")
 @login_required
 def view_employee(employee_id):
+    
     employee = Employee.query.get_or_404(employee_id)
 
     # ===============================
@@ -255,7 +256,8 @@ def view_employee(employee_id):
         leave_table=leave_table,
         start_date=start_date,
         end_date=end_date,
-        today=today
+        today=today,
+        datetime=datetime
     )
 
 
